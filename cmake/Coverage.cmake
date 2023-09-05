@@ -13,7 +13,7 @@ find ${CMAKE_BINARY_DIR} -type f
 endfunction()
 
 function(AddCoverage target)
-find_program(LCOV_PATH lcov REQUIRED)
+find_program(LCOV_PATH lcov REQUIRED PATHS '/usr/local/bin/')
 find_program(GENHTML_PATH genhtml REQUIRED)
 add_custom_target(coverage-${target}
 COMMAND ${LCOV_PATH} -d . --zerocounters
