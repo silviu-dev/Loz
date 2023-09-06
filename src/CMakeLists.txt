@@ -8,8 +8,9 @@ add_executable(bootstrap bootstrap.cpp Runner.cpp Runner.hpp)
 #CleanCoverage(addition)
 
 add_subdirectory(scanner)
+add_subdirectory(errorHandling)
 
-target_link_libraries(bootstrap PRIVATE scanner)
+target_link_libraries(bootstrap PRIVATE scanner errorHandler)
 
 include(Format)
 Format(bootstrap .)
