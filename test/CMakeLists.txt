@@ -1,6 +1,8 @@
 include(Testing)
 
-add_executable(loz_test dummyTest.cpp)
-target_link_libraries(loz_test PRIVATE addition)
-AddTests(loz_test)
+add_executable(unit_tests null.cpp)
+
+add_subdirectory(scanner)
+
+AddTests(unit_tests)
 EnableCoverage(addition)

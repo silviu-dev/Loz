@@ -1,0 +1,4 @@
+#!/bin/sh
+cmake -B build -S .
+cmake --build build 
+./build/test/unit_tests
