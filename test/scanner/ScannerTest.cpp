@@ -1,8 +1,23 @@
-#include "Scanner.hpp"
+#include <memory>
 #include <gtest/gtest.h>
-TEST(CalcTest, SumAddsTwoInts) {
-EXPECT_EQ(4, 4);
-}
-TEST(CalcTest, MultiplyMultipliesTwoInts) {
-EXPECT_EQ(12, 4);
+#include <gmock/gmock.h>
+
+#include "Scanner.hpp"
+
+using namespace testing;
+
+class ScannerTest : public ::testing::Test {
+ protected:
+  void SetUp() override 
+  {
+  	sut_ = std::make_shared<Scanner>();
+  }
+  IScannerPtr sut_;
+};
+
+TEST_F(ScannerTest, ScanSucces) 
+{
+	std::string input = "if(2==1+1)";
+  	const auto& result = sut_->scanTokens(input);
+  	EXPECT_THAT(result, IsEmpty());
 }
