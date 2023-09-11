@@ -9,14 +9,12 @@
 class Runner
 {
   public:
-    Runner(const IScannerPtr &scanner, const IErrorHandlerPtr &errorHandler)
-        : scanner_(scanner), errorHandler_(errorHandler){};
-    int run(std::vector<std::string>);
+    Runner(const IErrorHandlerPtr &errorHandler) : errorHandler_(errorHandler){};
+    void run(const std::vector<std::string> &userInput);
 
   private:
-    int runPrompt();
-    int runFile(const std::string &path);
-    IScannerPtr scanner_;
+    void runPrompt();
+    void runFile(const std::string &path);
     IErrorHandlerPtr errorHandler_;
 };
 

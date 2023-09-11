@@ -2,5 +2,5 @@
 
 class ErrorHandler : public IErrorHandler
 {
-    void signalError(int line, std::string message) override;
+    void signalError(int line, const std::string &message) override;
 };

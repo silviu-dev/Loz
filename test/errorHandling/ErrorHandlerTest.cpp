@@ -22,5 +22,5 @@ TEST_F(ErrorHandlerTest, signalErrorSucces)
     testing::internal::CaptureStdout();
     sut_->signalError(99, errorMessage);
     std::string output = testing::internal::GetCapturedStdout();
-  	EXPECT_EQ(output, "[line 99]Error:expected a ;");
+  	EXPECT_EQ(output, "[line 99]Error:expected a ;\n");
 }

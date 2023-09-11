@@ -1,16 +1,19 @@
-add_executable(bootstrap bootstrap.cpp Runner.cpp Runner.hpp)
 
-#add_library(addition STATIC logic.cpp)
-#target_include_directories(addition SYSTEM BEFORE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+set(absPath ${CMAKE_SOURCE_DIR}/src/abstractSyntaxTree)
 
-# ... testing and program analysis modules
-#include(Coverage)
-#CleanCoverage(addition)
+add_custom_command(OUTPUT ${absPath}/Expr.hpp
+COMMAND mkdir tmpDir
+COMMAND g++ ${CMAKE_SOURCE_DIR}/generators/TreeGenerator.cpp -o tmpDir/TreeGenerator
+COMMAND ./tmpDir/TreeGenerator ${absPath}
+COMMAND rm -rf tmpDir
+)
+
+add_executable(bootstrap bootstrap.cpp Runner.cpp Runner.hpp ${absPath}/Expr.hpp)
 
 add_subdirectory(scanner)
 add_subdirectory(errorHandling)
 
-target_link_libraries(bootstrap PRIVATE scanner errorHandler)
+target_link_libraries(bootstrap PUBLIC scanner errorHandler)
 
 include(Format)
 Format(bootstrap .)
