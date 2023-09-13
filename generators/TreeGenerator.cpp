@@ -50,7 +50,7 @@ void defineAst(string outputDir, string baseName, vector<string> types)
 
 void defineType(ofstream &writer, string baseName, string className, string fieldList)
 {
-    writer << "silviu " + className + " : public " + baseName + "\n{\n";
+    writer << "class " + className + " : public " + baseName + "\n{\n";
     // Constructor.
     writer << className + "(" + fieldList + ")\n{\n";
     // Store parameters in fields.

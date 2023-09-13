@@ -1,6 +1,6 @@
 class Expr {};
 
-silviu Binary  : public Expr
+class Binary  : public Expr
 {
 Binary ( Expr left, Token operator, Expr right)
 {
@@ -13,7 +13,7 @@ this->Expr = Expr;
  Expr right;
 };
 
-silviu Grouping  : public Expr
+class Grouping  : public Expr
 {
 Grouping ( Expr expression)
 {
@@ -22,7 +22,7 @@ this->Expr = Expr;
  Expr expression;
 };
 
-silviu Literal  : public Expr
+class Literal  : public Expr
 {
 Literal ( Object value)
 {
@@ -31,7 +31,7 @@ this->Object = Object;
  Object value;
 };
 
-silviu Unary  : public Expr
+class Unary  : public Expr
 {
 Unary ( Token operator, Expr right)
 {
