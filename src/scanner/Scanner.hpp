@@ -22,7 +22,7 @@ class Scanner : public IScanner
     bool isAtEnd();
     char advance();
     void addToken(TokenType type);
-    void addToken(TokenType type, void *literal, int line = 0);
+    void addToken(TokenType type, std::shared_ptr<void> literal, int line = 0);
     bool match(char expected);
     char peek();
     void string();

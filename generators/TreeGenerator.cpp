@@ -4,9 +4,10 @@
 #include <vector>
 using namespace std;
 
-void defineAst(string outputDir, string baseName, vector<string> types);
+void defineAst(const string& outputDir, const string& baseName, const vector<string>& types);
 vector<string> splitString(const string &input, const char &delimiter);
 void defineType(ofstream &writer, string baseName, string className, string fieldList);
+void defineVisitor(ofstream &writer, const string& baseName, const vector<string>& types);
 
 int main(int argc, char *argv[])
 {
@@ -18,8 +19,8 @@ int main(int argc, char *argv[])
 
     string outputDir = argv[1];
     defineAst(outputDir, "Expr",
-              {"Binary : Expr left, Token operator, Expr right", "Grouping : Expr expression", "Literal : Object value",
-               "Unary : Token operator, Expr right"});
+              {"Binary : Expr left, Token oper, Expr right", "Grouping : Expr expression", "Literal : void value, TokenType type",
+               "Unary : Token oper, Expr right"});
 }
 
 vector<string> splitString(const string &input, const char &delimiter)
@@ -33,11 +34,20 @@ vector<string> splitString(const string &input, const char &delimiter)
     }
     return strings;
 }
-void defineAst(string outputDir, string baseName, vector<string> types)
+
+void defineAst(const string& outputDir,const string& baseName, const vector<string>& types)
 {
     string path = outputDir + "/" + baseName + ".hpp";
     ofstream writer(path);
-    writer << "class " + baseName + " {};\n\n";
+    writer<<"#pragma once\n";
+    writer<<"#include <memory>\n";
+    writer<<"#include \"../scanner/IScanner.hpp\"\n";
+    writer<<"struct Binary;\n";
+    writer<<"struct Grouping;\n";
+    writer<<"struct Literal;\n";
+    writer<<"struct Unary;\n";
+    defineVisitor(writer, baseName, types);
+    writer << "struct " + baseName + " {\nvirtual void accept(std::shared_ptr<Visitor> visitor) = 0;};\n\n";
     // The AST classes.
     for (string type : types)
     {
@@ -48,23 +58,54 @@ void defineAst(string outputDir, string baseName, vector<string> types)
     }
 }
 
+void defineVisitor(ofstream& writer,const string& baseName, const vector<string>& types)
+{
+    writer<<"struct Visitor{\n";
+    for (string type : types) 
+    {
+        auto splitedString = splitString(type, ':');
+        string typeName = splitedString[0];
+        writer<<"virtual void visit(std::shared_ptr<" + typeName + "> " + ") = 0;\n";
+    }
+    writer<<" };\n";
+}
+
 void defineType(ofstream &writer, string baseName, string className, string fieldList)
 {
-    writer << "class " + className + " : public " + baseName + "\n{\n";
+    writer << "struct " + className + " : public " + baseName +
+    ", public std::enable_shared_from_this<" + className +">" + "\n{\n";
     // Constructor.
-    writer << className + "(" + fieldList + ")\n{\n";
-    // Store parameters in fields.
     auto fields = splitString(fieldList, ',');
+    writer << className + "(";
+    bool isFirst=true;
+    for(auto field: fields)
+    {
+        string typeName = splitString(string(field.begin()+1, field.end()), ' ')[0];
+        string name = splitString(string(field.begin()+1, field.end()), ' ')[1];
+        if(!isFirst)
+        {
+            writer<<", ";
+        }
+        isFirst=false;
+        writer<<"const std::shared_ptr<"+typeName+">& " + name;
+    }
+    writer<<")\n{\n";
+    // Store parameters in fields.
     for (string field : fields)
     {
-        string name = splitString(field, ' ')[1];
+        string name = splitString(string(field.begin()+1, field.end()), ' ')[1];
         writer << "this->" << name << " = " << name << ";\n";
     }
     writer << ("}\n");
+
+    writer<<"void accept(std::shared_ptr<Visitor> visitor) override {\n";
+    writer<<"visitor->visit(shared_from_this());\n}\n";
     // Fields.
     for (string field : fields)
     {
-        writer << field << ";\n";
+        string typeName = splitString(string(field.begin()+1, field.end()), ' ')[0];
+        string name = splitString(string(field.begin()+1, field.end()), ' ')[1];
+        writer << "std::shared_ptr<"+typeName+"> "<<name << ";\n";
     }
     writer << "};\n\n";
 }

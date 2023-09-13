@@ -120,7 +120,7 @@ void Scanner::addToken(TokenType type)
     addToken(type, NULL);
 }
 
-void Scanner::addToken(TokenType type, void *literal, int line)
+void Scanner::addToken(TokenType type, std::shared_ptr<void> literal, int line)
 {
     std::string text = source_.substr(start_, current_ - start_);
     tokens_.push_back(Token(type, text, literal, line ? line : line_));
@@ -161,7 +161,7 @@ void Scanner::string()
     advance();
     // Trim the surrounding quotes.
     std::string value = source_.substr(start_ + 1, current_ - start_ - 2);
-    addToken(STRING, new std::string(value), startingLine);
+    addToken(STRING, std::make_shared<std::string>(value), startingLine);
 }
 
 bool Scanner::isDigit(char c)
@@ -181,7 +181,7 @@ void Scanner::number()
         while (isDigit(peek()))
             advance();
     }
-    addToken(NUMBER, new float(stod(source_.substr(start_, current_ - start_))));
+    addToken(NUMBER, std::make_shared<float>(stod(source_.substr(start_, current_ - start_))));
 }
 
 char Scanner::peekNext()

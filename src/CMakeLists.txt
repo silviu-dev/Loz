@@ -2,7 +2,7 @@
 set(absPath ${CMAKE_SOURCE_DIR}/src/abstractSyntaxTree)
 
 add_custom_command(OUTPUT ${absPath}/Expr.hpp
-COMMAND mkdir tmpDir
+COMMAND mkdir -p tmpDir
 COMMAND g++ ${CMAKE_SOURCE_DIR}/generators/TreeGenerator.cpp -o tmpDir/TreeGenerator
 COMMAND ./tmpDir/TreeGenerator ${absPath}
 COMMAND rm -rf tmpDir

@@ -73,7 +73,7 @@ TEST_F(ScannerTest, TryToScanTwoCharactersTokenButFaile)
 TEST_F(ScannerTest, DontScanNumberPointAsTrailingDecimalPointNumber) 
 {
     std::string sourceCode("12.");
-    auto expectedTokenNumber = Token(NUMBER,"12", new float(12), 1);
+    auto expectedTokenNumber = Token(NUMBER,"12", std::make_shared<float>(12), 1);
     auto expectedTokenDot = Token(DOT,".", 0, 1);
     sut_ = std::make_shared<Scanner>(sourceCode, nullptr);
     const auto& result = sut_->scanTokens();
@@ -123,8 +123,8 @@ INSTANTIATE_TEST_CASE_P(
             std::make_tuple("<", Token(LESS,"<", 0,1)),
             std::make_tuple("<=", Token(LESS_EQUAL,"<=", 0,1)),
             std::make_tuple("myVariable", Token(IDENTIFIER,"myVariable", 0,1)),
-            std::make_tuple("\"multiline\nstring\"", Token(STRING,"\"multiline\nstring\"", new std::string("multiline\nstring"),1)),
-            std::make_tuple("1999.0", Token(NUMBER,"1999.0", new float(1999),1)),
+            std::make_tuple("\"multiline\nstring\"", Token(STRING,"\"multiline\nstring\"", std::make_shared<std::string>("multiline\nstring"),1)),
+            std::make_tuple("1999.0", Token(NUMBER,"1999.0", std::make_shared<float>(1999),1)),
             std::make_tuple("and", Token(AND,"and", 0,1)),
             std::make_tuple("class", Token(CLASS,"class", 0,1)),
             std::make_tuple("else", Token(ELSE,"else", 0,1)),
