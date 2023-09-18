@@ -15,12 +15,12 @@ class ErrorHandlerTest : public ::testing::Test {
   IErrorHandlerPtr sut_;
 };
 
-TEST_F(ErrorHandlerTest, signalErrorSucces) 
+TEST_F(ErrorHandlerTest, errorSucces) 
 {
 	std::string errorMessage = "expected a ;";
 
     testing::internal::CaptureStdout();
-    sut_->signalError(99, errorMessage);
+    sut_->error(99, errorMessage);
     std::string output = testing::internal::GetCapturedStdout();
-  	EXPECT_EQ(output, "[line 99]Error:expected a ;\n");
+  	EXPECT_EQ(output, "[line 99] Error: expected a ;\n");
 }

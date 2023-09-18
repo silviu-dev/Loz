@@ -87,7 +87,7 @@ TEST_F(ScannerTest, ExpectErrorUnexpectedCharacter)
 {
     std::string sourceCode("~");
     sut_ = std::make_shared<Scanner>(sourceCode, errorHandlerMock_);
-    EXPECT_CALL(*errorHandlerMock_, signalError(1, "Unexpected character."));
+    EXPECT_CALL(*errorHandlerMock_, error(1, "Unexpected character."));
     sut_->scanTokens();
 }
 
@@ -95,7 +95,7 @@ TEST_F(ScannerTest, ExpectErrorUnterminatedString)
 {
     std::string sourceCode("\"unterminated string");
     sut_ = std::make_shared<Scanner>(sourceCode, errorHandlerMock_);
-    EXPECT_CALL(*errorHandlerMock_, signalError(1, "Unterminated string."));
+    EXPECT_CALL(*errorHandlerMock_, error(1, "Unterminated string."));
     sut_->scanTokens();
 }
 

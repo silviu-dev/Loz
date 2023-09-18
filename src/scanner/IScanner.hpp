@@ -1,4 +1,5 @@
 #pragma once
+#include <any>
 #include <array>
 #include <iostream>
 #include <memory>
@@ -64,7 +65,7 @@ enum TokenType
 class Token
 {
   public:
-    Token(TokenType type, std::string lexeme, std::shared_ptr<void> literal, int line)
+    Token(TokenType type, std::string lexeme, std::any literal, int line)
         : type_(type), lexeme_(lexeme), literal_(literal), line_(line)
     {
     }
@@ -78,21 +79,34 @@ class Token
     {
         return tokenTypeString[t];
     }
+
+    bool operator==(const Token &token) const
+    {
+        if (token.type_ != type_)
+            return false;
+        if (token.type_ == STRING)
+        {
+            auto l = std::any_cast<std::string>(token.literal_);
+            auto r = std::any_cast<std::string>(literal_);
+            if (l != r)
+                return false;
+        }
+        if (token.type_ == NUMBER)
+        {
+            auto l = std::any_cast<double>(token.literal_);
+            auto r = std::any_cast<double>(literal_);
+            if (l != r)
+                return false;
+        }
+        return token.type_ == type_ && token.lexeme_ == lexeme_ && token.line_ == line_;
+    }
+
     Token(const Token &token)
     {
         type_ = token.type_;
         lexeme_ = token.lexeme_;
         line_ = token.line_;
-        if (token.type_ == STRING)
-        {
-            auto stringPtr = std::static_pointer_cast<std::string>(token.literal_);
-            literal_ = std::make_shared<std::string>(*stringPtr);
-        }
-        else if (token.type_ == NUMBER)
-        {
-            auto floatPtr = std::static_pointer_cast<float>(token.literal_);
-            literal_ = std::make_shared<float>(*floatPtr);
-        }
+        literal_ = token.literal_;
     }
     Token operator=(const Token &token)
     {
@@ -101,45 +115,15 @@ class Token
             type_ = token.type_;
             lexeme_ = token.lexeme_;
             line_ = token.line_;
-            if (token.type_ == STRING)
-            {
-                auto stringPtr = std::static_pointer_cast<std::string>(token.literal_);
-                literal_ = std::make_shared<std::string>(*stringPtr);
-            }
-            else if (token.type_ == NUMBER)
-            {
-                auto floatPtr = std::static_pointer_cast<float>(token.literal_);
-                literal_ = std::make_shared<float>(*floatPtr);
-            }
+            literal_ = token.literal_;
         }
         return *this;
     }
-    bool operator==(const Token &token) const
-    {
-        if (token.type_ == STRING)
-        {
-            auto l = std::static_pointer_cast<std::string>(token.literal_);
-            auto r = std::static_pointer_cast<std::string>(literal_);
-            if (l == nullptr || r == nullptr || *l != *r)
-            {
-                return false;
-            }
-        }
-        if (token.type_ == NUMBER)
-        {
-            auto l = std::static_pointer_cast<float>(token.literal_);
-            auto r = std::static_pointer_cast<float>(literal_);
-            if (l == nullptr || r == nullptr || *l != *r)
-                return false;
-        }
-        return token.type_ == type_ && token.lexeme_ == lexeme_ && token.line_ == line_;
-    }
-
     TokenType type_;
 
   public:
     std::string lexeme_ = "";
-    std::shared_ptr<void> literal_ = NULL;
+    std::any literal_;
     int line_ = 0;
 };
 

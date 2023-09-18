@@ -19,8 +19,8 @@ int main(int argc, char *argv[])
 
     string outputDir = argv[1];
     defineAst(outputDir, "Expr",
-              {"Binary : Expr left, Token oper, Expr right", "Grouping : Expr expression", "Literal : void value, TokenType type",
-               "Unary : Token oper, Expr right"});
+              {"Binary = Expr left, Token oper, Expr right", "Grouping = Expr expression", "Literal = std::any value, TokenType type",
+               "Unary = Token oper, Expr right"});
 }
 
 vector<string> splitString(const string &input, const char &delimiter)
@@ -41,6 +41,7 @@ void defineAst(const string& outputDir,const string& baseName, const vector<stri
     ofstream writer(path);
     writer<<"#pragma once\n";
     writer<<"#include <memory>\n";
+    writer<<"#include <any>\n";
     writer<<"#include \"../scanner/IScanner.hpp\"\n";
     writer<<"struct Binary;\n";
     writer<<"struct Grouping;\n";
@@ -51,7 +52,7 @@ void defineAst(const string& outputDir,const string& baseName, const vector<stri
     // The AST classes.
     for (string type : types)
     {
-        auto splitedString = splitString(type, ':');
+        auto splitedString = splitString(type, '=');
         string className = splitedString[0];
         string fields = splitedString[1];
         defineType(writer, baseName, className, fields);
@@ -63,7 +64,7 @@ void defineVisitor(ofstream& writer,const string& baseName, const vector<string>
     writer<<"struct Visitor{\n";
     for (string type : types) 
     {
-        auto splitedString = splitString(type, ':');
+        auto splitedString = splitString(type, '=');
         string typeName = splitedString[0];
         writer<<"virtual void visit(std::shared_ptr<" + typeName + "> " + ") = 0;\n";
     }
@@ -87,16 +88,29 @@ void defineType(ofstream &writer, string baseName, string className, string fiel
             writer<<", ";
         }
         isFirst=false;
+        if(typeName=="Expr")
+        {
         writer<<"const std::shared_ptr<"+typeName+">& " + name;
+        }
+        else
+        {
+            writer<<"const "<<typeName+"& " + name;
+        }
     }
-    writer<<")\n{\n";
+    isFirst=true;
+    writer<<"):\n";
     // Store parameters in fields.
     for (string field : fields)
     {
+        if(!isFirst)
+        {
+            writer<<",\n";
+        }
+        isFirst=false;
         string name = splitString(string(field.begin()+1, field.end()), ' ')[1];
-        writer << "this->" << name << " = " << name << ";\n";
+        writer << name << "(" << name << ")";
     }
-    writer << ("}\n");
+    writer << ("{}\n");
 
     writer<<"void accept(std::shared_ptr<Visitor> visitor) override {\n";
     writer<<"visitor->visit(shared_from_this());\n}\n";
@@ -105,7 +119,14 @@ void defineType(ofstream &writer, string baseName, string className, string fiel
     {
         string typeName = splitString(string(field.begin()+1, field.end()), ' ')[0];
         string name = splitString(string(field.begin()+1, field.end()), ' ')[1];
-        writer << "std::shared_ptr<"+typeName+"> "<<name << ";\n";
+        if(typeName=="Expr")
+        {
+            writer << "const std::shared_ptr<"+typeName+"> "<<name << ";\n";
+        }
+        else
+        {
+            writer << "const "<<typeName+" "<<name << ";\n";
+        }
     }
     writer << "};\n\n";
 }
