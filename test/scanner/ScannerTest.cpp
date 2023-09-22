@@ -1,7 +1,6 @@
 #include <memory>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <iostream>
 
 #include "ErrorHandlerMock.hpp"
 #include "Scanner.hpp"
@@ -13,17 +12,6 @@ protected:
     IScannerPtr sut_;
     std::shared_ptr<StrictMock<ErrorHandlerMock>> errorHandlerMock_ = std::make_shared<StrictMock<ErrorHandlerMock>>();
 };
-
-
-TEST_P(ScannerTest, ScanSucces) 
-{
-    auto sourceCode = std::get<0>(GetParam());
-    auto expectedToken =std::get<1>(GetParam());
-   sut_ = std::make_shared<Scanner>(sourceCode, nullptr);
- 	const auto& result = sut_->scanTokens();
-    ASSERT_EQ(result.size(), 2);//EOF added allways
-    EXPECT_EQ(result[0], expectedToken)<<result[0].toString()<<" [nu este egal cu] "<<expectedToken.toString();
-}
 
 TEST_F(ScannerTest, IgnoreCommentSucces) 
 {
@@ -73,7 +61,7 @@ TEST_F(ScannerTest, TryToScanTwoCharactersTokenButFaile)
 TEST_F(ScannerTest, DontScanNumberPointAsTrailingDecimalPointNumber) 
 {
     std::string sourceCode("12.");
-    auto expectedTokenNumber = Token(NUMBER,"12", std::make_shared<float>(12), 1);
+    auto expectedTokenNumber = Token(NUMBER,"12", 12.0, 1);
     auto expectedTokenDot = Token(DOT,".", 0, 1);
     sut_ = std::make_shared<Scanner>(sourceCode, nullptr);
     const auto& result = sut_->scanTokens();
@@ -97,6 +85,16 @@ TEST_F(ScannerTest, ExpectErrorUnterminatedString)
     sut_ = std::make_shared<Scanner>(sourceCode, errorHandlerMock_);
     EXPECT_CALL(*errorHandlerMock_, error(1, "Unterminated string."));
     sut_->scanTokens();
+}
+
+TEST_P(ScannerTest, ScanSucces) 
+{
+    auto sourceCode = std::get<0>(GetParam());
+    auto expectedToken =std::get<1>(GetParam());
+   sut_ = std::make_shared<Scanner>(sourceCode, nullptr);
+    const auto& result = sut_->scanTokens();
+    ASSERT_EQ(result.size(), 2);//EOFI added allways
+    EXPECT_EQ(result[0], expectedToken)<<result[0].toString()<<" [nu este egal cu] "<<expectedToken.toString();
 }
 
 INSTANTIATE_TEST_CASE_P(
@@ -123,8 +121,8 @@ INSTANTIATE_TEST_CASE_P(
             std::make_tuple("<", Token(LESS,"<", 0,1)),
             std::make_tuple("<=", Token(LESS_EQUAL,"<=", 0,1)),
             std::make_tuple("myVariable", Token(IDENTIFIER,"myVariable", 0,1)),
-            std::make_tuple("\"multiline\nstring\"", Token(STRING,"\"multiline\nstring\"", std::make_shared<std::string>("multiline\nstring"),1)),
-            std::make_tuple("1999.0", Token(NUMBER,"1999.0", std::make_shared<float>(1999),1)),
+            std::make_tuple("\"multiline\nstring\"", Token(STRING,"\"multiline\nstring\"", std::string("multiline\nstring"),1)),
+            std::make_tuple("1999.0", Token(NUMBER,"1999.0", 1999.0,1)),
             std::make_tuple("and", Token(AND,"and", 0,1)),
             std::make_tuple("class", Token(CLASS,"class", 0,1)),
             std::make_tuple("else", Token(ELSE,"else", 0,1)),

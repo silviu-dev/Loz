@@ -1,12 +1,5 @@
-set(astPath ${CMAKE_SOURCE_DIR}/src/abstractSyntaxTree)
-
-add_custom_command(OUTPUT ${astPath}/Expr.hpp
-COMMAND mkdir -p tmpDir
-COMMAND g++ ${CMAKE_SOURCE_DIR}/generators/TreeGenerator.cpp -o tmpDir/TreeGenerator
-COMMAND ./tmpDir/TreeGenerator ${astPath}
-COMMAND rm -rf tmpDir
-)
-
-add_library(interpreter STATIC Interpreter.cpp ${astPath}/Expr.hpp)
+add_library(interpreter STATIC Interpreter.cpp)
+target_link_libraries(interpreter PUBLIC absExpresions)
 target_include_directories(interpreter BEFORE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-${astPath})
+${CMAKE_CURRENT_SOURCE_DIR}/../errorHandling
+${CMAKE_CURRENT_SOURCE_DIR}/../scanner)

@@ -12,6 +12,8 @@ std::vector<Token> Scanner::scanTokens()
         // We are at the beginning of the next lexeme.
         start_ = current_;
         scanToken();
+        if (hasError)
+            return {};
     }
     tokens_.push_back(Token(EOFI, "", 0, line_));
     return tokens_;
@@ -104,6 +106,7 @@ void Scanner::scanToken()
         else
         {
             errorHandler_->error(line_, "Unexpected character.");
+            hasError = true;
         }
         break;
     }
@@ -155,6 +158,7 @@ void Scanner::string()
     if (isAtEnd())
     {
         errorHandler_->error(line_, "Unterminated string.");
+        hasError = true;
         return;
     }
     // The closing ".

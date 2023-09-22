@@ -2,7 +2,6 @@
 #include <iostream>
 #include <typeinfo>
 
-#include "AstPrinter.hpp"
 #include "Interpreter.hpp"
 #include "Parser.hpp"
 #include "Runner.hpp"
@@ -33,17 +32,23 @@ void Runner::runPrompt()
     {
         auto scanner = std::make_shared<Scanner>(line, errorHandler_);
         auto tokens = scanner->scanTokens();
-        auto parser = std::make_shared<Parser>(tokens, errorHandler_);
-        auto expr = parser->parse();
-        auto interpreter = std::make_shared<Interpreter>();
-        interpreter->interpret(expr);
-        auto result = interpreter->getResult();
-        if (result.type() == typeid(std::string))
-            std::cout << std::any_cast<std::string>(result) << "\n";
-        else if (result.type() == typeid(double))
-            std::cout << std::any_cast<double>(result) << "\n";
-        else
-            std::cout << std::any_cast<bool>(result) << "\n";
+        if (!tokens.empty())
+        {
+            auto parser = std::make_shared<Parser>(tokens, errorHandler_);
+            auto expr = parser->parse();
+            if (expr != nullptr)
+            {
+                auto interpreter = std::make_shared<Interpreter>(errorHandler_);
+                interpreter->interpret(expr);
+                auto result = interpreter->getResult();
+                if (result.type() == typeid(std::string))
+                    std::cout << std::any_cast<std::string>(result) << "\n";
+                else if (result.type() == typeid(double))
+                    std::cout << std::any_cast<double>(result) << "\n";
+                else if (result.type() == typeid(bool))
+                    std::cout << std::any_cast<bool>(result) << "\n";
+            }
+        }
         // if (expr != nullptr)
         // {
         //     auto printer = std::make_shared<AstPrinter>();

@@ -79,15 +79,19 @@ std::shared_ptr<Expr> Parser::unary()
 std::shared_ptr<Expr> Parser::primary()
 {
     if (match({FALSE}))
-        return std::make_shared<Literal>(false, FALSE);
+        return std::make_shared<Literal>(false);
     if (match({TRUE}))
-        return std::make_shared<Literal>(true, TRUE);
-    if (match({NIL}))
-        return std::make_shared<Literal>(nullptr, NIL);
+        return std::make_shared<Literal>(true);
+    if (match({IDENTIFIER}))
+    {
+        return std::make_shared<Literal>(nullptr);
+    }
     if (match({NUMBER}))
-        return std::make_shared<Literal>(previous().literal_, NUMBER);
+    {
+        return std::make_shared<Literal>(previous().literal_);
+    }
     if (match({STRING}))
-        return std::make_shared<Literal>(previous().literal_, STRING);
+        return std::make_shared<Literal>(previous().literal_);
     if (match({LEFT_PAREN}))
     {
         auto expr = expression();

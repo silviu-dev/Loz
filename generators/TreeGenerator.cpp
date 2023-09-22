@@ -4,7 +4,7 @@
 #include <vector>
 using namespace std;
 
-void defineAst(const string& outputDir, const string& baseName, const vector<string>& types);
+void defineAst(const string& outputDir, const string& baseName, const vector<string>& types, const string& aditionalBeginingCode);
 vector<string> splitString(const string &input, const char &delimiter);
 void defineType(ofstream &writer, string baseName, string className, string fieldList);
 void defineVisitor(ofstream &writer, const string& baseName, const vector<string>& types);
@@ -18,9 +18,24 @@ int main(int argc, char *argv[])
     }
 
     string outputDir = argv[1];
+    string additionalExprIncludes = "#pragma once\n"
+               "#include <memory>\n"
+               "#include <any>\n"
+               "#include \"../scanner/IScanner.hpp\"\n"
+               "struct Binary;\n"
+               "struct Grouping;\n"
+               "struct Literal;\n"
+               "struct Unary;\n";
     defineAst(outputDir, "Expr",
-              {"Binary = Expr left, Token oper, Expr right", "Grouping = Expr expression", "Literal = std::any value, TokenType type",
-               "Unary = Token oper, Expr right"});
+              {"Binary = Expr left, Token oper, Expr right", "Grouping = Expr expression", "Literal = std::any value",
+               "Unary = Token oper, Expr right"}, additionalExprIncludes);
+
+    string additionalStmtIncludes = "#pragma once\n"
+               "#include <memory>\n"
+               "#include <any>\n"
+               "#include \"../scanner/IScanner.hpp\"\n";
+    defineAst(outputDir, "Stmt",
+          {"Expression = Expr expression", "Print = Expr expression"}, additionalStmtIncludes);
 }
 
 vector<string> splitString(const string &input, const char &delimiter)
@@ -35,20 +50,15 @@ vector<string> splitString(const string &input, const char &delimiter)
     return strings;
 }
 
-void defineAst(const string& outputDir,const string& baseName, const vector<string>& types)
+void defineAst(const string& outputDir,const string& baseName, const vector<string>& types,
+    const string& aditionalBeginingCode)
 {
     string path = outputDir + "/" + baseName + ".hpp";
     ofstream writer(path);
-    writer<<"#pragma once\n";
-    writer<<"#include <memory>\n";
-    writer<<"#include <any>\n";
-    writer<<"#include \"../scanner/IScanner.hpp\"\n";
-    writer<<"struct Binary;\n";
-    writer<<"struct Grouping;\n";
-    writer<<"struct Literal;\n";
-    writer<<"struct Unary;\n";
+    writer<<aditionalBeginingCode;
     defineVisitor(writer, baseName, types);
-    writer << "struct " + baseName + " {\nvirtual void accept(std::shared_ptr<Visitor> visitor) = 0;};\n\n";
+    writer << "struct " + baseName + " {\nvirtual void accept(std::shared_ptr<Visitor> visitor) = 0;\n"
+                                     "virtual bool isEqual(std::shared_ptr<Expr>) = 0;};\n\n";
     // The AST classes.
     for (string type : types)
     {
@@ -57,6 +67,7 @@ void defineAst(const string& outputDir,const string& baseName, const vector<stri
         string fields = splitedString[1];
         defineType(writer, baseName, className, fields);
     }
+    writer.close();
 }
 
 void defineVisitor(ofstream& writer,const string& baseName, const vector<string>& types)
@@ -114,6 +125,41 @@ void defineType(ofstream &writer, string baseName, string className, string fiel
 
     writer<<"void accept(std::shared_ptr<Visitor> visitor) override {\n";
     writer<<"visitor->visit(shared_from_this());\n}\n";
+    //isEqual 
+    writer<<"bool isEqual(std::shared_ptr<Expr> elem)\n"
+    "{\n   if(typeid(*elem)!=typeid(*this)) return false;\n"
+    "    auto convertedPtr = std::static_pointer_cast<"+className+">(elem);\n";
+    for (string field : fields)
+    {
+        string typeName = splitString(string(field.begin()+1, field.end()), ' ')[0];
+        string name = splitString(string(field.begin()+1, field.end()), ' ')[1];
+        if(typeName == "Expr")
+        {
+            writer<<"if(!this->"+name+"->isEqual(convertedPtr->"+name+"))\n"
+            "   return false;\n";
+        }
+        else
+        if(typeName == "std::any")
+        {
+            writer<<"if (this->"+name+".type() != convertedPtr->"+name+".type()) "
+            "return false;\n"
+            "if (this->"+name+".type() == typeid(std::string))\n"
+            "{\n   if(std::any_cast<std::string>(this->"+name+") != std::any_cast<std::string>(convertedPtr->"+name+")) "
+            "return false;\n}\n"
+            "else if (this->"+name+".type() == typeid(double))\n"
+            "{\n   if(std::any_cast<double>(this->"+name+") != std::any_cast<double>(convertedPtr->"+name+")) "
+            "return false;\n}\n"
+            "else if (this->"+name+".type() == typeid(bool))"
+            "{\n   if(std::any_cast<bool>(this->"+name+") != std::any_cast<bool>(convertedPtr->"+name+")) "
+            "return false;\n}\n";
+        }
+        else
+        {
+            writer<<"if(!(this->"+name+" == convertedPtr->"+name+")) "
+                    "return false;\n";
+        }
+    }
+    writer<<"return true;\n}\n";
     // Fields.
     for (string field : fields)
     {

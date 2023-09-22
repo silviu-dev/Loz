@@ -5,9 +5,11 @@ target_include_directories(unit_tests BEFORE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/
 
 add_subdirectory(scanner)
 add_subdirectory(errorHandling)
+add_subdirectory(interpreter)
 add_subdirectory(parser)
 
 AddTests(unit_tests)
 EnableCoverage(errorHandler)
 EnableCoverage(scanner)
+EnableCoverage(interpreter)
 EnableCoverage(parser)

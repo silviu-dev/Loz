@@ -9,7 +9,7 @@ void ErrorHandler::error(int line, const std::string &message)
 
 void ErrorHandler::error(Token token, const std::string &message)
 {
-    if (token.type_ == EOF)
+    if (token.type_ == EOFI)
     {
         report(token.line_, " at end", message);
     }

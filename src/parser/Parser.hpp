@@ -1,8 +1,8 @@
 #pragma once
 #include <memory>
 
-#include "ErrorHandler.hpp"
 #include "Expr.hpp"
+#include "IErrorHandler.hpp"
 #include "IScanner.hpp"
 
 struct Parser

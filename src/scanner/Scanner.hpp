@@ -39,4 +39,5 @@ class Scanner : public IScanner
     int start_ = 0;
     int current_ = 0;
     int line_ = 1;
+    bool hasError = false;
 };
