@@ -1,14 +1,17 @@
 #pragma once
 #include <any>
+#include <iostream>
 #include <vector>
 
-#include "Expr.hpp"
+#include "Environment.hpp"
 #include "IErrorHandler.hpp"
+#include "Stmt.hpp"
 
-class Interpreter : public Visitor, public std::enable_shared_from_this<Interpreter>
+class Interpreter : public ExprVisitor, public StmtVisitor, public std::enable_shared_from_this<Interpreter>
 {
   public:
-    Interpreter(const std::shared_ptr<IErrorHandler> &errorHandler) : errorHandler_(errorHandler)
+    Interpreter(const std::shared_ptr<IErrorHandler> &errorHandler, const std::shared_ptr<Environment> &environment)
+        : errorHandler_(errorHandler), env_(environment)
     {
     }
     struct InterpreterError : public std::exception
@@ -19,11 +22,16 @@ class Interpreter : public Visitor, public std::enable_shared_from_this<Interpre
         Token oper;
         std::string message;
     };
-    void interpret(std::shared_ptr<Expr>);
+    void interpret(std::vector<std::shared_ptr<Stmt>>);
+    void visit(std::shared_ptr<Expression> expression) override;
+    void visit(std::shared_ptr<Print> print) override;
+    void visit(std::shared_ptr<Var>) override;
+    void visit(std::shared_ptr<Assign> assign);
     void visit(std::shared_ptr<Binary>) override;
     void visit(std::shared_ptr<Grouping>) override;
     void visit(std::shared_ptr<Literal>) override;
     void visit(std::shared_ptr<Unary>) override;
+    void visit(std::shared_ptr<Variable>) override;
     std::any evaluate(std::shared_ptr<Expr> expr);
     bool isTruthy(std::any object);
     std::any getResult()
@@ -35,6 +43,9 @@ class Interpreter : public Visitor, public std::enable_shared_from_this<Interpre
     bool isEqual(std::any a, std::any b);
 
   private:
+    void printValue(std::any value);
+
     std::any result_ = nullptr;
     std::shared_ptr<IErrorHandler> errorHandler_ = nullptr;
+    std::shared_ptr<Environment> env_ = nullptr;
 };

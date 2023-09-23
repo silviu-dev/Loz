@@ -4,9 +4,26 @@
 
 using namespace std;
 
-void AstPrinter::print(std::shared_ptr<Expr> expr)
+void AstPrinter::print(std::shared_ptr<Stmt> stmt)
 {
-    expr->accept(shared_from_this());
+    stmt->accept(shared_from_this());
+    cout << ";";
+}
+
+void AstPrinter::visit(std::shared_ptr<Expression> expression)
+{
+    expression->expression->accept(shared_from_this());
+}
+
+void AstPrinter::visit(std::shared_ptr<Print> print)
+{
+    cout << "print ";
+    print->expression->accept(shared_from_this());
+}
+
+void AstPrinter::visit(std::shared_ptr<Var> variable)
+{
+    parenthesize(variable->name.lexeme_, {variable->initializer});
 }
 
 void AstPrinter::visit(std::shared_ptr<Binary> binary)
@@ -23,16 +40,20 @@ void AstPrinter::visit(std::shared_ptr<Literal> literal)
         cout << "Nil";
     else
     {
-        if (literal->type == STRING)
+        if (literal->value.type() == typeid(double))
         {
-            auto stringPtr = std::any_cast<string>(literal->value);
-            cout << stringPtr << " ";
+            auto stringObj = std::any_cast<double>(literal->value);
+            cout << stringObj << " ";
         }
-        else if (literal->type == NUMBER)
+        else if (literal->value.type() == typeid(std::string))
         {
-            auto doublePtr = std::any_cast<double>(literal->value);
-
-            cout << doublePtr << " ";
+            auto doubleObj = std::any_cast<std::string>(literal->value);
+            cout << doubleObj << " ";
+        }
+        if (literal->value.type() == typeid(bool))
+        {
+            auto boolObj = std::any_cast<bool>(literal->value);
+            cout << boolObj;
         }
     }
 }
@@ -40,6 +61,12 @@ void AstPrinter::visit(std::shared_ptr<Unary> unary)
 {
     parenthesize(unary->oper.lexeme_, {unary->right});
 }
+
+void AstPrinter::visit(std::shared_ptr<Variable> variable)
+{
+    cout << "(" << variable->name.lexeme_ << ")";
+}
+
 void AstPrinter::parenthesize(std::string Name, std::vector<std::shared_ptr<Expr>> exprVec)
 {
     cout << "(" << Name << " ";

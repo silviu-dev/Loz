@@ -8,5 +8,5 @@ COMMAND rm -rf tmpDir
 )
 
 add_library(astPrinter STATIC AstPrinter.cpp)
-target_include_directories(astPrinter BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+target_include_directories(astPrinter BEFORE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 ${astPath})

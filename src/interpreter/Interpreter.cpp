@@ -2,17 +2,50 @@
 
 #include "Interpreter.hpp"
 
-void Interpreter::interpret(std::shared_ptr<Expr> expr)
+void Interpreter::interpret(std::vector<std::shared_ptr<Stmt>> expr)
 {
     try
     {
-        expr->accept(shared_from_this());
+        for (auto e : expr)
+            e->accept(shared_from_this());
     }
     catch (InterpreterError error)
     {
         errorHandler_->error(error.oper, error.message);
         result_ = nullptr;
     }
+}
+
+void Interpreter::visit(std::shared_ptr<Expression> expression)
+{
+    auto val = evaluate(expression->expression);
+    printValue(val);
+}
+
+void Interpreter::visit(std::shared_ptr<Print> print)
+{
+    auto val = evaluate(print->expression);
+    printValue(val);
+}
+
+void Interpreter::visit(std::shared_ptr<Var> variable)
+{
+    std::any value = nullptr;
+    if (variable->initializer != nullptr)
+    {
+        value = evaluate(variable->initializer);
+    }
+    env_->define(variable->name.lexeme_, value);
+}
+
+void Interpreter::visit(std::shared_ptr<Assign> assign)
+{
+    std::cout << "assign new value "
+              << "\n";
+    printValue(evaluate(assign->value));
+    std::cout << " to the variable: " << assign->name.lexeme_ << "<<\n";
+
+    env_->assign(assign->name, evaluate(assign->value));
 }
 
 void Interpreter::visit(std::shared_ptr<Binary> binary)
@@ -94,11 +127,15 @@ void Interpreter::visit(std::shared_ptr<Unary> unary)
     }
 }
 
+void Interpreter::visit(std::shared_ptr<Variable> variable)
+{
+    result_ = env_->get(variable->name);
+}
+
 std::any Interpreter::evaluate(std::shared_ptr<Expr> expr)
 {
-    auto interpreter = std::make_shared<Interpreter>(errorHandler_);
-    expr->accept(interpreter);
-    return interpreter->getResult();
+    expr->accept(shared_from_this());
+    return result_;
 }
 
 bool Interpreter::isTruthy(std::any object)
@@ -137,4 +174,14 @@ bool Interpreter::isEqual(std::any a, std::any b)
         return std::any_cast<std::string>(a) == std::any_cast<std::string>(b);
     if (a.type() == typeid(bool))
         return std::any_cast<bool>(a) == std::any_cast<bool>(b);
+}
+
+void Interpreter::printValue(std::any value)
+{
+    if (value.type() == typeid(double))
+        std::cout << std::any_cast<double>(value) << "\n";
+    if (value.type() == typeid(std::string))
+        std::cout << std::any_cast<std::string>(value) << "\n";
+    if (value.type() == typeid(bool))
+        std::cout << std::any_cast<bool>(value) << "\n";
 }

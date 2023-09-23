@@ -1,9 +1,10 @@
 #pragma once
 #include <memory>
+#include <vector>
 
-#include "Expr.hpp"
 #include "IErrorHandler.hpp"
 #include "IScanner.hpp"
+#include "Stmt.hpp"
 
 struct Parser
 {
@@ -12,14 +13,20 @@ struct Parser
     {
     }
 
-    std::shared_ptr<Expr> parse();
+    std::vector<std::shared_ptr<Stmt>> parse();
 
   private:
     class ParseError : public std::exception
     {
     };
 
+    std::shared_ptr<Stmt> declaration();
+    std::shared_ptr<Stmt> varDeclaration();
+    std::shared_ptr<Stmt> statement();
+    std::shared_ptr<Stmt> printStatement();
     std::shared_ptr<Expr> expression();
+    std::shared_ptr<Stmt> expressionStatement();
+    std::shared_ptr<Expr> assignment();
     std::shared_ptr<Expr> equality();
     std::shared_ptr<Expr> comparison();
     std::shared_ptr<Expr> term();

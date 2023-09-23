@@ -2,6 +2,8 @@
 #include <iostream>
 #include <typeinfo>
 
+#include "AstPrinter.hpp"
+#include "Environment.hpp"
 #include "Interpreter.hpp"
 #include "Parser.hpp"
 #include "Runner.hpp"
@@ -28,32 +30,32 @@ void Runner::runPrompt()
     std::cout << "running in prompt mode\n";
     std::string line;
     std::cout << ">";
+    auto environment = std::make_shared<Environment>();
+    auto interpreter = std::make_shared<Interpreter>(errorHandler_, environment);
     while (getline(std::cin, line))
     {
         auto scanner = std::make_shared<Scanner>(line, errorHandler_);
         auto tokens = scanner->scanTokens();
+
+        // for (auto t : tokens)
+        // {
+        //     std::cout << t.toString() << "\n";
+        // }
         if (!tokens.empty())
         {
             auto parser = std::make_shared<Parser>(tokens, errorHandler_);
             auto expr = parser->parse();
-            if (expr != nullptr)
+            if (!expr.empty())
             {
-                auto interpreter = std::make_shared<Interpreter>(errorHandler_);
                 interpreter->interpret(expr);
-                auto result = interpreter->getResult();
-                if (result.type() == typeid(std::string))
-                    std::cout << std::any_cast<std::string>(result) << "\n";
-                else if (result.type() == typeid(double))
-                    std::cout << std::any_cast<double>(result) << "\n";
-                else if (result.type() == typeid(bool))
-                    std::cout << std::any_cast<bool>(result) << "\n";
             }
+            // auto printer = std::make_shared<AstPrinter>();
+            // for (auto e : expr)
+            // {
+            //     printer->print(e);
+            //     std::cout << "\n";
+            // }
         }
-        // if (expr != nullptr)
-        // {
-        //     auto printer = std::make_shared<AstPrinter>();
-        //     printer->print(expr);
-        // }
         std::cout << ">";
     }
     std::cout << "ending prompt session\n";
@@ -68,11 +70,32 @@ void Runner::runFile(const std::string &path)
     {
         while (getline(f, line))
         {
-            input += line;
+            input += line + '\n';
         }
+        auto environment = std::make_shared<Environment>();
         auto scanner = std::make_shared<Scanner>(input, errorHandler_);
-        scanner->scanTokens();
-        std::cout << input;
+        auto tokens = scanner->scanTokens();
+        if (!tokens.empty())
+        {
+            // for (auto t : tokens)
+            // {
+            //     std::cout << t.toString() << "\n";
+            // }
+            auto parser = std::make_shared<Parser>(tokens, errorHandler_);
+            auto expr = parser->parse();
+            if (!expr.empty())
+            {
+                auto interpreter = std::make_shared<Interpreter>(errorHandler_, environment);
+                interpreter->interpret(expr);
+            }
+            // auto printer = std::make_shared<AstPrinter>();
+            // for (auto e : expr)
+            // {
+            //     printer->print(e);
+            //     std::cout << "\n";
+            // }
+        }
+        std::cout << "exiting from file mode\n";
     }
     else
     {
