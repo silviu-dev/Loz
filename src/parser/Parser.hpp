@@ -24,9 +24,15 @@ struct Parser
     std::shared_ptr<Stmt> varDeclaration();
     std::shared_ptr<Stmt> statement();
     std::shared_ptr<Stmt> printStatement();
+    std::shared_ptr<Stmt> whileStatement();
+    std::shared_ptr<Stmt> forStatement();
+    std::vector<std::shared_ptr<Stmt>> block();
     std::shared_ptr<Expr> expression();
     std::shared_ptr<Stmt> expressionStatement();
+    std::shared_ptr<Stmt> ifStatement();
     std::shared_ptr<Expr> assignment();
+    std::shared_ptr<Expr> orOperation();
+    std::shared_ptr<Expr> andOperation();
     std::shared_ptr<Expr> equality();
     std::shared_ptr<Expr> comparison();
     std::shared_ptr<Expr> term();

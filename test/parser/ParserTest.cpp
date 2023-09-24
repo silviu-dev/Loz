@@ -35,7 +35,7 @@ TEST_P(ParserTest, ParseSucces)
     auto tokens=std::get<0>(GetParam());
     auto expectedExpr = std::get<1>(GetParam());
     sut_ = std::make_shared<Parser>(tokens, errorHandlerMock_);
-    EXPECT_EQ(sut_->parse()->isEqual(expectedExpr), true);
+    EXPECT_THAT(sut_->parse()->isEqual(expectedExpr), );
 }
 
 

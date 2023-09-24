@@ -27,22 +27,28 @@ int main(int argc, char *argv[])
                "struct Grouping;\n"
                "struct Literal;\n"
                "struct Unary;\n"
-               "struct Variable;\n";
+               "struct Variable;\n"
+               "struct Logical;\n";
     defineAst(outputDir, "Expr",
               {"Assign = Token name, Expr value", "Binary = Expr left, Token oper, Expr right",
               "Grouping = Expr expression", "Literal = std::any value", "Unary = Token oper, Expr right",
-              "Variable = Token name"}, additionalExprIncludes);
+              "Variable = Token name","Logical = Expr left, Token oper, Expr right"}, additionalExprIncludes);
 
     string additionalStmtIncludes = "#pragma once\n"
                "#include <memory>\n"
                "#include <any>\n"
                "#include \"../scanner/IScanner.hpp\"\n"
                "#include \"Expr.hpp\"\n"
+               "struct Block;\n"
                "struct Expression;\n"
                "struct Print;\n"
-               "struct Var;\n";
+               "struct Var;\n"
+               "struct If;\n"
+               "struct While;\n";
     defineAst(outputDir, "Stmt",
-          {"Expression = Expr expression", "Print = Expr expression", "Var = Token name, Expr initializer"},
+          {"Block = std::vector<std::shared_ptr<Stmt>> statements", "Expression = Expr expression", "Print = Expr expression",
+           "Var = Token name, Expr initializer", "If = Expr condition, Stmt thenBranch, Stmt elseBranch",
+           "While = Expr condition, Stmt body"},
           additionalStmtIncludes);
 }
 
@@ -65,7 +71,7 @@ void defineAst(const string& outputDir,const string& baseName, const vector<stri
     ofstream writer(path);
     writer<<aditionalBeginingCode;
     defineVisitor(writer, baseName, types);
-    writer << "struct " + baseName + " {\nvirtual void accept(std::shared_ptr<"+baseName+"Visitor> visitor) = 0;\n"
+    writer << "struct " + baseName + " {\nvirtual std::any accept(std::shared_ptr<"+baseName+"Visitor> visitor) = 0;\n"
                                      "virtual bool isEqual(std::shared_ptr<"+baseName+">) = 0;};\n\n";
     // The AST classes.
     for (string type : types)
@@ -85,7 +91,7 @@ void defineVisitor(ofstream& writer,const string& baseName, const vector<string>
     {
         auto splitedString = splitString(type, '=');
         string typeName = splitedString[0];
-        writer<<"virtual void visit(std::shared_ptr<" + typeName + "> " + ") = 0;\n";
+        writer<<"virtual std::any visit(std::shared_ptr<" + typeName + "> " + ") = 0;\n";
     }
     writer<<" };\n";
 }
@@ -107,7 +113,7 @@ void defineType(ofstream &writer, string baseName, string className, string fiel
             writer<<", ";
         }
         isFirst=false;
-        if(typeName=="Expr")
+        if(typeName=="Expr" || typeName == "Stmt")
         {
         writer<<"const std::shared_ptr<"+typeName+">& " + name;
         }
@@ -131,8 +137,8 @@ void defineType(ofstream &writer, string baseName, string className, string fiel
     }
     writer << ("{}\n");
 
-    writer<<"void accept(std::shared_ptr<"+baseName+"Visitor> visitor) override {\n";
-    writer<<"visitor->visit(shared_from_this());\n}\n";
+    writer<<"std::any accept(std::shared_ptr<"+baseName+"Visitor> visitor) override {\n";
+    writer<<"return visitor->visit(shared_from_this());\n}\n";
     //isEqual 
     writer<<"bool isEqual(std::shared_ptr<"+baseName+"> elem)\n"
     "{\n   if(typeid(*elem)!=typeid(*this)) return false;\n"
@@ -173,7 +179,7 @@ void defineType(ofstream &writer, string baseName, string className, string fiel
     {
         string typeName = splitString(string(field.begin()+1, field.end()), ' ')[0];
         string name = splitString(string(field.begin()+1, field.end()), ' ')[1];
-        if(typeName=="Expr")
+        if(typeName=="Expr" || typeName =="Stmt")
         {
             writer << "const std::shared_ptr<"+typeName+"> "<<name << ";\n";
         }

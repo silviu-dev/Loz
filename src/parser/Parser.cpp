@@ -45,7 +45,82 @@ std::shared_ptr<Stmt> Parser::statement()
 {
     if (match({PRINT}))
         return printStatement();
+    if (match({WHILE}))
+        return whileStatement();
+    if (match({LEFT_BRACE}))
+        return std::make_shared<Block>(block());
+    if (match({FOR}))
+        return forStatement();
+    if (match({IF}))
+        return ifStatement();
     return expressionStatement();
+}
+
+std::shared_ptr<Stmt> Parser::forStatement()
+{
+    consume(LEFT_PAREN, "Expect '(' after 'for'.");
+    std::shared_ptr<Stmt> initializer;
+    if (match({SEMICOLON}))
+    {
+        initializer = nullptr;
+    }
+    else if (match({VAR}))
+    {
+        initializer = varDeclaration();
+    }
+    else
+    {
+        initializer = expressionStatement();
+    }
+    std::shared_ptr<Expr> condition = nullptr;
+    if (!check(SEMICOLON))
+    {
+        condition = expression();
+    }
+    consume(SEMICOLON, "Expect ';' after loop condition.");
+    std::shared_ptr<Expr> increment = nullptr;
+    if (!check(RIGHT_PAREN))
+    {
+        increment = expression();
+    }
+    consume(RIGHT_PAREN, "Expect ')' after for clauses.");
+    std::shared_ptr<Stmt> body = statement();
+
+    if (increment != nullptr)
+    {
+        auto vec = std::vector<std::shared_ptr<Stmt>>{body, std::make_shared<Expression>(increment)};
+        body = std::make_shared<Block>(vec);
+    }
+    if (condition == nullptr)
+    {
+        condition = std::make_shared<Literal>(true);
+    }
+    body = std::make_shared<While>(condition, body);
+    if (initializer != nullptr)
+    {
+        body = std::make_shared<Block>(std::vector<std::shared_ptr<Stmt>>{initializer, body});
+    }
+    return body;
+}
+
+std::shared_ptr<Stmt> Parser::whileStatement()
+{
+    consume(LEFT_PAREN, "Expect '(' after 'while'.");
+    auto condition = expression();
+    consume(RIGHT_PAREN, "Expect ')' after condition.");
+    auto body = statement();
+    return std::make_shared<While>(condition, body);
+}
+
+std::vector<std::shared_ptr<Stmt>> Parser::block()
+{
+    std::vector<std::shared_ptr<Stmt>> statements{};
+    while (!check(RIGHT_BRACE) && !isAtEnd())
+    {
+        statements.push_back(declaration());
+    }
+    consume(RIGHT_BRACE, "Expect '}' after block.");
+    return statements;
 }
 
 std::shared_ptr<Stmt> Parser::printStatement()
@@ -53,6 +128,20 @@ std::shared_ptr<Stmt> Parser::printStatement()
     auto value = expression();
     consume(SEMICOLON, "Expect ';' after value.");
     return std::make_shared<Print>(value);
+}
+
+std::shared_ptr<Stmt> Parser::ifStatement()
+{
+    consume(LEFT_PAREN, "Expect '(' after 'if'.");
+    auto condition = expression();
+    consume(RIGHT_PAREN, "Expect ')' after if condition.");
+    auto thenBranch = statement();
+    std::shared_ptr<Stmt> elseBranch = nullptr;
+    if (match({ELSE}))
+    {
+        elseBranch = statement();
+    }
+    return std::make_shared<If>(condition, thenBranch, elseBranch);
 }
 
 std::shared_ptr<Stmt> Parser::expressionStatement()
@@ -69,7 +158,7 @@ std::shared_ptr<Expr> Parser::expression()
 
 std::shared_ptr<Expr> Parser::assignment()
 {
-    auto expr = equality();
+    auto expr = orOperation();
     if (match({EQUAL}))
     {
         auto equals = previous();
@@ -81,6 +170,30 @@ std::shared_ptr<Expr> Parser::assignment()
             return std::make_shared<Assign>(name, value);
         }
         throw error(equals, "Invalid assignment target.");
+    }
+    return expr;
+}
+
+std::shared_ptr<Expr> Parser::orOperation()
+{
+    auto expr = andOperation();
+    while (match({OR}))
+    {
+        auto oper = previous();
+        auto right = andOperation();
+        expr = std::make_shared<Logical>(expr, oper, right);
+    }
+    return expr;
+}
+
+std::shared_ptr<Expr> Parser::andOperation()
+{
+    auto expr = equality();
+    while (match({AND}))
+    {
+        auto oper = previous();
+        auto right = equality();
+        expr = std::make_shared<Logical>(expr, oper, right);
     }
     return expr;
 }
@@ -150,6 +263,8 @@ std::shared_ptr<Expr> Parser::primary()
         return std::make_shared<Literal>(false);
     if (match({TRUE}))
         return std::make_shared<Literal>(true);
+    if (match({NIL}))
+        return std::make_shared<Literal>(nullptr);
     if (match({IDENTIFIER}))
     {
         return std::make_shared<Variable>(previous());

@@ -17,9 +17,17 @@ struct RunError : public std::exception
 class Environment
 {
   public:
-    void define(std::string name, std::any value);
-    std::any get(const Token &name);
-    void assign(const Token &name, std::any value);
+    Environment() : enclosing(nullptr)
+    {
+    }
+    Environment(std::shared_ptr<Environment> env) : enclosing(env)
+    {
+    }
+    virtual void define(std::string name, std::any value);
+    virtual std::any get(const Token &name);
+    virtual void assign(const Token &name, std::any value);
+
+    std::shared_ptr<Environment> enclosing;
 
   private:
     std::map<std::string, std::any> values;

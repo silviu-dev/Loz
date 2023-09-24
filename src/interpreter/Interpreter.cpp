@@ -2,53 +2,103 @@
 
 #include "Interpreter.hpp"
 
-void Interpreter::interpret(std::vector<std::shared_ptr<Stmt>> expr)
+void Interpreter::interpret(std::vector<std::shared_ptr<Stmt>> stmtVec)
 {
     try
     {
-        for (auto e : expr)
-            e->accept(shared_from_this());
+        for (auto stmt : stmtVec)
+        {
+            stmt->accept(shared_from_this());
+        }
     }
     catch (InterpreterError error)
     {
         errorHandler_->error(error.oper, error.message);
-        result_ = nullptr;
+    }
+    catch (RunError error)
+    {
+        errorHandler_->error(error.oper, error.message);
     }
 }
 
-void Interpreter::visit(std::shared_ptr<Expression> expression)
+std::any Interpreter::visit(std::shared_ptr<Expression> expression)
 {
-    auto val = evaluate(expression->expression);
-    printValue(val);
+    evaluate(expression->expression);
+    return nullptr;
 }
 
-void Interpreter::visit(std::shared_ptr<Print> print)
+std::any Interpreter::visit(std::shared_ptr<Print> print)
 {
     auto val = evaluate(print->expression);
     printValue(val);
+    return nullptr;
 }
 
-void Interpreter::visit(std::shared_ptr<Var> variable)
+std::any Interpreter::visit(std::shared_ptr<Var> declaration)
 {
     std::any value = nullptr;
-    if (variable->initializer != nullptr)
+    if (declaration->initializer != nullptr)
     {
-        value = evaluate(variable->initializer);
+        value = evaluate(declaration->initializer);
     }
-    env_->define(variable->name.lexeme_, value);
+    env_->define(declaration->name.lexeme_, value);
+    return nullptr;
 }
 
-void Interpreter::visit(std::shared_ptr<Assign> assign)
+std::any Interpreter::visit(std::shared_ptr<While> stmt)
 {
-    std::cout << "assign new value "
-              << "\n";
-    printValue(evaluate(assign->value));
-    std::cout << " to the variable: " << assign->name.lexeme_ << "<<\n";
-
-    env_->assign(assign->name, evaluate(assign->value));
+    while (isTruthy(evaluate(stmt->condition)))
+    {
+        stmt->body->accept(shared_from_this());
+    }
+    return nullptr;
 }
 
-void Interpreter::visit(std::shared_ptr<Binary> binary)
+std::any Interpreter::visit(std::shared_ptr<Block> block)
+{
+    auto newEnv = std::make_shared<Environment>(env_);
+    auto interpreter = std::make_shared<Interpreter>(errorHandler_, newEnv);
+    interpreter->interpret(block->statements);
+    return nullptr;
+}
+
+std::any Interpreter::visit(std::shared_ptr<If> stmt)
+{
+    if (isTruthy(evaluate(stmt->condition)))
+    {
+        stmt->thenBranch->accept(shared_from_this());
+    }
+    else if (stmt->elseBranch != nullptr)
+    {
+        stmt->elseBranch->accept(shared_from_this());
+    }
+    return nullptr;
+}
+
+std::any Interpreter::visit(std::shared_ptr<Assign> assign)
+{
+    auto val = evaluate(assign->value);
+    env_->assign(assign->name, val);
+    return val;
+}
+
+std::any Interpreter::visit(std::shared_ptr<Logical> expr)
+{
+    auto left = evaluate(expr->left);
+    if (expr->oper.type_ == OR)
+    {
+        if (isTruthy(left))
+            return left;
+    }
+    else
+    {
+        if (!isTruthy(left))
+            return left;
+    }
+    return evaluate(expr->right);
+}
+
+std::any Interpreter::visit(std::shared_ptr<Binary> binary)
 {
     auto left = evaluate(binary->left);
     auto right = evaluate(binary->right);
@@ -56,40 +106,40 @@ void Interpreter::visit(std::shared_ptr<Binary> binary)
     {
     case MINUS:
         checkNumberOperands(binary->oper, left, right);
-        result_ = std::any_cast<double>(left) - std::any_cast<double>(right);
+        return std::any_cast<double>(left) - std::any_cast<double>(right);
         break;
     case GREATER:
         checkNumberOperands(binary->oper, left, right);
-        result_ = std::any_cast<double>(left) > std::any_cast<double>(right);
+        return std::any_cast<double>(left) > std::any_cast<double>(right);
         break;
     case GREATER_EQUAL:
         checkNumberOperands(binary->oper, left, right);
-        result_ = std::any_cast<double>(left) >= std::any_cast<double>(right);
+        return std::any_cast<double>(left) >= std::any_cast<double>(right);
         break;
     case LESS:
         checkNumberOperands(binary->oper, left, right);
-        result_ = std::any_cast<double>(left) < std::any_cast<double>(right);
+        return std::any_cast<double>(left) < std::any_cast<double>(right);
         break;
     case LESS_EQUAL:
         checkNumberOperands(binary->oper, left, right);
-        result_ = std::any_cast<double>(left) <= std::any_cast<double>(right);
+        return std::any_cast<double>(left) <= std::any_cast<double>(right);
         break;
     case SLASH:
         checkNumberOperands(binary->oper, left, right);
-        result_ = std::any_cast<double>(left) / std::any_cast<double>(right);
+        return std::any_cast<double>(left) / std::any_cast<double>(right);
         break;
     case STAR:
         checkNumberOperands(binary->oper, left, right);
-        result_ = std::any_cast<double>(left) * std::any_cast<double>(right);
+        return std::any_cast<double>(left) * std::any_cast<double>(right);
         break;
     case PLUS:
         if (left.type() == typeid(double) && right.type() == typeid(double))
         {
-            result_ = std::any_cast<double>(left) + std::any_cast<double>(right);
+            return std::any_cast<double>(left) + std::any_cast<double>(right);
         }
         else if (left.type() == typeid(std::string) && right.type() == typeid(std::string))
         {
-            result_ = std::any_cast<std::string>(left) + std::any_cast<std::string>(right);
+            return std::any_cast<std::string>(left) + std::any_cast<std::string>(right);
         }
         else
         {
@@ -97,45 +147,44 @@ void Interpreter::visit(std::shared_ptr<Binary> binary)
         }
         break;
     case BANG_EQUAL:
-        result_ = !isEqual(left, right);
+        return !isEqual(left, right);
         break;
     case EQUAL_EQUAL:
-        result_ = isEqual(left, right);
+        return isEqual(left, right);
         break;
     }
 }
-void Interpreter::visit(std::shared_ptr<Grouping> grouping)
+std::any Interpreter::visit(std::shared_ptr<Grouping> grouping)
 {
-    result_ = evaluate(grouping->expression);
+    return evaluate(grouping->expression);
 }
-void Interpreter::visit(std::shared_ptr<Literal> literal)
+std::any Interpreter::visit(std::shared_ptr<Literal> literal)
 {
-    result_ = literal->value;
+    return literal->value;
 }
-void Interpreter::visit(std::shared_ptr<Unary> unary)
+std::any Interpreter::visit(std::shared_ptr<Unary> unary)
 {
     auto right = evaluate(unary->right);
     switch (unary->oper.type_)
     {
     case BANG:
-        result_ = !isTruthy(right);
+        return !isTruthy(right);
         break;
     case MINUS:
         checkNumberOperand(unary->oper, right);
         auto doubleObj = std::any_cast<double>(right);
-        result_ = doubleObj * (-1);
+        return doubleObj * (-1);
     }
 }
 
-void Interpreter::visit(std::shared_ptr<Variable> variable)
+std::any Interpreter::visit(std::shared_ptr<Variable> variable)
 {
-    result_ = env_->get(variable->name);
+    return env_->get(variable->name);
 }
 
 std::any Interpreter::evaluate(std::shared_ptr<Expr> expr)
 {
-    expr->accept(shared_from_this());
-    return result_;
+    return expr->accept(shared_from_this());
 }
 
 bool Interpreter::isTruthy(std::any object)
@@ -179,9 +228,15 @@ bool Interpreter::isEqual(std::any a, std::any b)
 void Interpreter::printValue(std::any value)
 {
     if (value.type() == typeid(double))
+    {
         std::cout << std::any_cast<double>(value) << "\n";
+    }
     if (value.type() == typeid(std::string))
+    {
         std::cout << std::any_cast<std::string>(value) << "\n";
+    }
     if (value.type() == typeid(bool))
+    {
         std::cout << std::any_cast<bool>(value) << "\n";
+    }
 }

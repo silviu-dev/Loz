@@ -3,7 +3,6 @@
 #include <typeinfo>
 
 #include "AstPrinter.hpp"
-#include "Environment.hpp"
 #include "Interpreter.hpp"
 #include "Parser.hpp"
 #include "Runner.hpp"
@@ -30,8 +29,7 @@ void Runner::runPrompt()
     std::cout << "running in prompt mode\n";
     std::string line;
     std::cout << ">";
-    auto environment = std::make_shared<Environment>();
-    auto interpreter = std::make_shared<Interpreter>(errorHandler_, environment);
+    auto interpreter = std::make_shared<Interpreter>(errorHandler_);
     while (getline(std::cin, line))
     {
         auto scanner = std::make_shared<Scanner>(line, errorHandler_);
@@ -72,7 +70,6 @@ void Runner::runFile(const std::string &path)
         {
             input += line + '\n';
         }
-        auto environment = std::make_shared<Environment>();
         auto scanner = std::make_shared<Scanner>(input, errorHandler_);
         auto tokens = scanner->scanTokens();
         if (!tokens.empty())
@@ -85,7 +82,7 @@ void Runner::runFile(const std::string &path)
             auto expr = parser->parse();
             if (!expr.empty())
             {
-                auto interpreter = std::make_shared<Interpreter>(errorHandler_, environment);
+                auto interpreter = std::make_shared<Interpreter>(errorHandler_);
                 interpreter->interpret(expr);
             }
             // auto printer = std::make_shared<AstPrinter>();

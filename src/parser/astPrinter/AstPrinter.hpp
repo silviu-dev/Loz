@@ -6,13 +6,14 @@ class AstPrinter : public StmtVisitor, public ExprVisitor, public std::enable_sh
 {
   public:
     void print(std::shared_ptr<Stmt> stmt);
-    void visit(std::shared_ptr<Expression> expression) override;
-    void visit(std::shared_ptr<Print> print) override;
-    void visit(std::shared_ptr<Var>) override;
-    void visit(std::shared_ptr<Binary>) override;
-    void visit(std::shared_ptr<Grouping>) override;
-    void visit(std::shared_ptr<Literal>) override;
-    void visit(std::shared_ptr<Unary>) override;
-    void visit(std::shared_ptr<Variable>) override;
+    std::any visit(std::shared_ptr<Expression> expression) override;
+    std::any visit(std::shared_ptr<Print> print) override;
+    std::any visit(std::shared_ptr<Var>) override;
+    std::any visit(std::shared_ptr<Binary>) override;
+    std::any visit(std::shared_ptr<Grouping>) override;
+    std::any visit(std::shared_ptr<Literal>) override;
+    std::any visit(std::shared_ptr<Unary>) override;
+    std::any visit(std::shared_ptr<Variable>) override;
     void parenthesize(std::string Name, std::vector<std::shared_ptr<Expr>>);
+    void printValue(std::any value);
 };
