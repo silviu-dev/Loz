@@ -1,9 +1,35 @@
 #include <any>
+#include <chrono>
+#include <iostream>
+#include <string>
 
+#include "ICallable.hpp"
 #include "Interpreter.hpp"
+#include "RuntimeFunction.hpp"
+using namespace std;
+class ClockNativeFunction : public ICallable
+{
+    std::any call(std::shared_ptr<Interpreter> interpreter, std::vector<std::any> arguments) override
+    {
+        return (double)(std::chrono::duration_cast<std::chrono::milliseconds>(
+                            std::chrono::system_clock::now().time_since_epoch())
+                            .count());
+    }
+    int arity() override
+    {
+        return 0;
+    }
+    std::string toString()
+    {
+        return "<native fn>";
+    }
+};
 
 void Interpreter::interpret(std::vector<std::shared_ptr<Stmt>> stmtVec)
 {
+    // ICallablePtr clockPtr = std::make_shared<ClockNativeFunction>();
+    // globals_->define("clock", clockPtr);
+
     try
     {
         for (auto stmt : stmtVec)
@@ -57,9 +83,16 @@ std::any Interpreter::visit(std::shared_ptr<While> stmt)
 std::any Interpreter::visit(std::shared_ptr<Block> block)
 {
     auto newEnv = std::make_shared<Environment>(env_);
-    auto interpreter = std::make_shared<Interpreter>(errorHandler_, newEnv);
-    interpreter->interpret(block->statements);
+    executeBlock(block->statements, newEnv);
     return nullptr;
+}
+
+void Interpreter::executeBlock(std::vector<std::shared_ptr<Stmt>> block, std::shared_ptr<Environment> newEnv)
+{
+    auto oldEnv = env_;
+    env_ = newEnv;
+    interpret(block);
+    env_ = oldEnv;
 }
 
 std::any Interpreter::visit(std::shared_ptr<If> stmt)
@@ -162,6 +195,61 @@ std::any Interpreter::visit(std::shared_ptr<Literal> literal)
 {
     return literal->value;
 }
+
+std::any Interpreter::visit(std::shared_ptr<Call> expr)
+{
+    auto callee = evaluate(expr->callee);
+    std::vector<std::any> arguments{};
+    for (auto argument : expr->arguments)
+    {
+        arguments.push_back(evaluate(argument));
+    }
+    ICallablePtr function;
+    try
+    {
+        function = std::any_cast<ICallablePtr>(callee);
+    }
+    catch (...)
+    {
+        throw InterpreterError(expr->paren, "Can only call functions and classes.");
+    }
+
+    if (arguments.size() != function->arity())
+    {
+        throw InterpreterError(expr->paren, std::string("Expected ") + std::to_string(function->arity()) +
+                                                " arguments but got " + std::to_string(arguments.size()) + ".");
+    }
+
+    try
+    {
+        return function->call(shared_from_this(), arguments);
+    }
+    catch (InterpreterReturn returner)
+    {
+        env_ = env_->enclosing;
+        return returner.result;
+    }
+    return nullptr;
+}
+
+std::any Interpreter::visit(std::shared_ptr<Return> ret)
+{
+    std::any value = nullptr;
+    if (ret->value != nullptr)
+    {
+        value = evaluate(ret->value);
+    }
+    throw InterpreterReturn(value);
+    return nullptr;
+}
+
+std::any Interpreter::visit(std::shared_ptr<Function> stmt) // function declaration
+{
+    ICallablePtr function = std::make_shared<RuntimeFunction>(stmt);
+    env_->define(stmt->name.lexeme_, function);
+    return nullptr;
+}
+
 std::any Interpreter::visit(std::shared_ptr<Unary> unary)
 {
     auto right = evaluate(unary->right);

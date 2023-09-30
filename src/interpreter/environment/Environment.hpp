@@ -1,8 +1,9 @@
 #pragma once
 #include <any>
+#include <iostream>
 #include <map>
 #include <string>
-
+using namespace std;
 #include "Token.hpp"
 
 struct RunError : public std::exception

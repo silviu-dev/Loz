@@ -8,7 +8,9 @@ std::vector<std::shared_ptr<Stmt>> Parser::parse()
     std::vector<std::shared_ptr<Stmt>> statements{};
     while (!isAtEnd())
     {
-        statements.push_back(declaration());
+        auto dec = declaration();
+        if (dec != nullptr)
+            statements.push_back(dec);
     }
     return statements;
 }
@@ -19,6 +21,8 @@ std::shared_ptr<Stmt> Parser::declaration()
     {
         if (match({VAR}))
             return varDeclaration();
+        if (match({FUN}))
+            return function("function");
         return statement();
     }
     catch (ParseError error)
@@ -26,6 +30,28 @@ std::shared_ptr<Stmt> Parser::declaration()
         synchronize();
         return nullptr;
     }
+}
+
+std::shared_ptr<Stmt> Parser::function(std::string kind)
+{
+    auto name = consume(IDENTIFIER, "Expect " + kind + " name.");
+    consume(LEFT_PAREN, "Expect '(' after " + kind + " name.");
+    std::vector<Token> parameters{};
+    if (!check(RIGHT_PAREN))
+    {
+        do
+        {
+            if (parameters.size() >= 255)
+            {
+                error(peek(), "Can't have more than 255 parameters.");
+            }
+            parameters.push_back(consume(IDENTIFIER, "Expect parameter name."));
+        } while (match({COMMA}));
+    }
+    consume(RIGHT_PAREN, "Expect ')' after parameters.");
+    consume(LEFT_BRACE, "Expect '{' before " + kind + " body.");
+    auto body = block();
+    return std::make_shared<Function>(name, parameters, body);
 }
 
 std::shared_ptr<Stmt> Parser::varDeclaration()
@@ -45,10 +71,14 @@ std::shared_ptr<Stmt> Parser::statement()
 {
     if (match({PRINT}))
         return printStatement();
+    if (match({RETURN}))
+        return returnStatement();
     if (match({WHILE}))
         return whileStatement();
     if (match({LEFT_BRACE}))
+    {
         return std::make_shared<Block>(block());
+    }
     if (match({FOR}))
         return forStatement();
     if (match({IF}))
@@ -128,6 +158,18 @@ std::shared_ptr<Stmt> Parser::printStatement()
     auto value = expression();
     consume(SEMICOLON, "Expect ';' after value.");
     return std::make_shared<Print>(value);
+}
+
+std::shared_ptr<Stmt> Parser::returnStatement()
+{
+    auto keyword = previous();
+    shared_ptr<Expr> value = nullptr;
+    if (!check(SEMICOLON))
+    {
+        value = expression();
+    }
+    consume(SEMICOLON, "Expect ';' after return value.");
+    return std::make_shared<Return>(keyword, value);
 }
 
 std::shared_ptr<Stmt> Parser::ifStatement()
@@ -254,7 +296,42 @@ std::shared_ptr<Expr> Parser::unary()
         auto right = unary();
         return std::make_shared<Unary>(oper, right);
     }
-    return primary();
+    return call();
+}
+
+std::shared_ptr<Expr> Parser::call()
+{
+    auto expr = primary();
+    while (true)
+    {
+        if (match({LEFT_PAREN}))
+        {
+            expr = finishCall(expr);
+        }
+        else
+        {
+            break;
+        }
+    }
+    return expr;
+}
+
+std::shared_ptr<Expr> Parser::finishCall(std::shared_ptr<Expr> callee)
+{
+    std::vector<std::shared_ptr<Expr>> arguments{};
+    if (!check(RIGHT_PAREN))
+    {
+        do
+        {
+            if (arguments.size() >= 255)
+            {
+                error(peek(), "Can't have more than 255 arguments.");
+            }
+            arguments.push_back(expression());
+        } while (match({COMMA}));
+    }
+    auto paren = consume(RIGHT_PAREN, "Expect ')' after arguments.");
+    return std::make_shared<Call>(callee, paren, arguments);
 }
 
 std::shared_ptr<Expr> Parser::primary()
@@ -304,10 +381,11 @@ bool Parser::check(TokenType type)
     return peek().type_ == type;
 }
 
-void Parser::advance()
+Token Parser::advance()
 {
     if (!isAtEnd())
         current_++;
+    return tokens_[current_ - 1];
 }
 
 bool Parser::isAtEnd()
@@ -325,11 +403,12 @@ Token Parser::previous()
     return tokens_[current_ - 1];
 }
 
-void Parser::consume(TokenType type, std::string message)
+Token Parser::consume(TokenType type, std::string message)
 {
     if (check(type))
         return advance();
     throw error(previous(), message);
+    return Token{};
 }
 
 Parser::ParseError Parser::error(Token token, std::string message)

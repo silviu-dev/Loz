@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
                "#include \"../scanner/IScanner.hpp\"\n"
                "struct Assign;\n"
                "struct Binary;\n"
+               "struct Call;\n"
                "struct Grouping;\n"
                "struct Literal;\n"
                "struct Unary;\n"
@@ -31,6 +32,7 @@ int main(int argc, char *argv[])
                "struct Logical;\n";
     defineAst(outputDir, "Expr",
               {"Assign = Token name, Expr value", "Binary = Expr left, Token oper, Expr right",
+              "Call = Expr callee, Token paren, std::vector<std::shared_ptr<Expr>> arguments",
               "Grouping = Expr expression", "Literal = std::any value", "Unary = Token oper, Expr right",
               "Variable = Token name","Logical = Expr left, Token oper, Expr right"}, additionalExprIncludes);
 
@@ -41,14 +43,17 @@ int main(int argc, char *argv[])
                "#include \"Expr.hpp\"\n"
                "struct Block;\n"
                "struct Expression;\n"
+               "struct Function;\n"
                "struct Print;\n"
                "struct Var;\n"
                "struct If;\n"
-               "struct While;\n";
+               "struct While;\n"
+               "struct Return;\n";
     defineAst(outputDir, "Stmt",
           {"Block = std::vector<std::shared_ptr<Stmt>> statements", "Expression = Expr expression", "Print = Expr expression",
            "Var = Token name, Expr initializer", "If = Expr condition, Stmt thenBranch, Stmt elseBranch",
-           "While = Expr condition, Stmt body"},
+           "While = Expr condition, Stmt body", "Function = Token name, std::vector<Token> params, std::vector<std::shared_ptr<Stmt>> body",
+           "Return = Token keyword, Expr value"},
           additionalStmtIncludes);
 }
 

@@ -21,9 +21,11 @@ struct Parser
     };
 
     std::shared_ptr<Stmt> declaration();
+    std::shared_ptr<Stmt> function(std::string kind);
     std::shared_ptr<Stmt> varDeclaration();
     std::shared_ptr<Stmt> statement();
     std::shared_ptr<Stmt> printStatement();
+    std::shared_ptr<Stmt> returnStatement();
     std::shared_ptr<Stmt> whileStatement();
     std::shared_ptr<Stmt> forStatement();
     std::vector<std::shared_ptr<Stmt>> block();
@@ -38,17 +40,19 @@ struct Parser
     std::shared_ptr<Expr> term();
     std::shared_ptr<Expr> factor();
     std::shared_ptr<Expr> unary();
+    std::shared_ptr<Expr> call();
     std::shared_ptr<Expr> primary();
 
     bool match(std::vector<TokenType> types);
     bool check(TokenType type);
-    void advance();
+    Token advance();
     bool isAtEnd();
     Token peek();
     Token previous();
-    void consume(TokenType type, std::string message);
+    Token consume(TokenType type, std::string message);
     ParseError error(Token token, std::string message);
     void synchronize();
+    std::shared_ptr<Expr> finishCall(std::shared_ptr<Expr> callee);
 
     std::vector<Token> tokens_;
     int current_;

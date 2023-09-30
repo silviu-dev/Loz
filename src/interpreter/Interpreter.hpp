@@ -10,9 +10,11 @@
 class Interpreter : public ExprVisitor, public StmtVisitor, public std::enable_shared_from_this<Interpreter>
 {
   public:
-    Interpreter(const std::shared_ptr<IErrorHandler> &errorHandler, std::shared_ptr<Environment> environment = nullptr)
-        : errorHandler_(errorHandler), env_((environment != nullptr) ? environment : std::make_shared<Environment>())
+    Interpreter(const std::shared_ptr<IErrorHandler> &errorHandler, std::shared_ptr<Environment> newEnv = nullptr)
+        : errorHandler_(errorHandler), env_((newEnv != nullptr) ? newEnv : std::make_shared<Environment>())
     {
+        if (newEnv == nullptr)
+            globals_ = env_;
     }
     struct InterpreterError : public std::exception
     {
@@ -22,6 +24,14 @@ class Interpreter : public ExprVisitor, public StmtVisitor, public std::enable_s
         Token oper;
         std::string message;
     };
+    struct InterpreterReturn : public std::exception
+    {
+        InterpreterReturn(std::any result) : result(result)
+        {
+        }
+        std::any result;
+    };
+
     void interpret(std::vector<std::shared_ptr<Stmt>>);
     std::any visit(std::shared_ptr<Expression> expression) override;
     std::any visit(std::shared_ptr<Print> print) override;
@@ -35,8 +45,12 @@ class Interpreter : public ExprVisitor, public StmtVisitor, public std::enable_s
     std::any visit(std::shared_ptr<Grouping>) override;
     std::any visit(std::shared_ptr<Literal>) override;
     std::any visit(std::shared_ptr<Unary>) override;
+    std::any visit(std::shared_ptr<Call> expr) override;
+    std::any visit(std::shared_ptr<Return> ret) override;
+    std::any visit(std::shared_ptr<Function> stmt) override;
     std::any visit(std::shared_ptr<Variable>) override;
     std::any evaluate(std::shared_ptr<Expr> expr);
+    void executeBlock(std::vector<std::shared_ptr<Stmt>> block, std::shared_ptr<Environment> newEnv);
     bool isTruthy(std::any object);
     std::any getResult()
     {
@@ -45,6 +59,8 @@ class Interpreter : public ExprVisitor, public StmtVisitor, public std::enable_s
     void checkNumberOperand(Token oper, std::any operand);
     void checkNumberOperands(Token oper, std::any left, std::any right);
     bool isEqual(std::any a, std::any b);
+
+    std::shared_ptr<Environment> globals_ = nullptr;
 
   private:
     void printValue(std::any value);
