@@ -68,4 +68,5 @@ class Interpreter : public ExprVisitor, public StmtVisitor, public std::enable_s
     std::any result_ = nullptr;
     std::shared_ptr<IErrorHandler> errorHandler_ = nullptr;
     std::shared_ptr<Environment> env_ = nullptr;
+    friend class FunctionCaller;
 };

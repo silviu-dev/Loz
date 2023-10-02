@@ -226,7 +226,6 @@ std::any Interpreter::visit(std::shared_ptr<Call> expr)
     }
     catch (InterpreterReturn returner)
     {
-        env_ = env_->enclosing;
         return returner.result;
     }
     return nullptr;

@@ -1,14 +1,13 @@
 fun fib(n) 
 {
-print n;
 if (n <= 1)
 {
-	print("da");
 	return n;
 }
 return fib(n - 2) + fib(n - 1);
 }
 //for (var i = 0; i < 5; i = i + 1) 
 //{
-print fib(4);
+print "valoarea finala a functiei";
+print fib(15);
 //}
