@@ -5,6 +5,7 @@
 #include "AstPrinter.hpp"
 #include "Interpreter.hpp"
 #include "Parser.hpp"
+#include "Resolver.hpp"
 #include "Runner.hpp"
 #include "Scanner.hpp"
 
@@ -79,11 +80,13 @@ void Runner::runFile(const std::string &path)
             //     std::cout << t.toString() << "\n";
             // }
             auto parser = std::make_shared<Parser>(tokens, errorHandler_);
-            auto expr = parser->parse();
-            if (!expr.empty())
+            auto statements = parser->parse();
+            if (!statements.empty())
             {
                 auto interpreter = std::make_shared<Interpreter>(errorHandler_);
-                interpreter->interpret(expr);
+                auto resolver = std::make_shared<Resolver>(interpreter, errorHandler_);
+                resolver->resolve(statements);
+                interpreter->interpret(statements);
             }
             // auto printer = std::make_shared<AstPrinter>();
             // for (auto e : expr)

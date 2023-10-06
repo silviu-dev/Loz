@@ -1,13 +1,13 @@
-fun fib(n) 
+var a =2;
+print a;
 {
-if (n <= 1)
-{
-	return n;
+var a=3;
+print a;
+
+	{
+	a=4;
+	print a;
+	}
+print a;
 }
-return fib(n - 2) + fib(n - 1);
-}
-//for (var i = 0; i < 5; i = i + 1) 
-//{
-print "valoarea finala a functiei";
-print fib(15);
-//}
+print a;

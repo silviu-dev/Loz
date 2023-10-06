@@ -6,8 +6,9 @@
 
 struct FunctionCaller
 {
-    FunctionCaller(const std::shared_ptr<Function> &declaration, std::shared_ptr<Interpreter> interpreter)
-        : declaration_(declaration), interpreter_(interpreter)
+    FunctionCaller(const std::shared_ptr<Function> &declaration, std::shared_ptr<Interpreter> interpreter,
+                   std::shared_ptr<Environment> closure)
+        : declaration_(declaration), interpreter_(interpreter), closure_(closure)
     {
         initialEnv_ = interpreter_->env_;
     }
@@ -17,7 +18,7 @@ struct FunctionCaller
     }
     void call(std::vector<std::any> arguments)
     {
-        auto newEnv = std::make_shared<Environment>(interpreter_->globals_);
+        auto newEnv = std::make_shared<Environment>(closure_);
         int i = 0;
         for (auto param : declaration_->params)
         {
@@ -31,11 +32,13 @@ struct FunctionCaller
     std::shared_ptr<Function> declaration_;
     std::shared_ptr<Interpreter> interpreter_;
     std::shared_ptr<Environment> initialEnv_;
+    std::shared_ptr<Environment> closure_;
 };
 
 struct RuntimeFunction : public ICallable
 {
-    RuntimeFunction(const std::shared_ptr<Function> &declaration) : declaration_(declaration)
+    RuntimeFunction(const std::shared_ptr<Function> &declaration, std::shared_ptr<Environment> &closure)
+        : declaration_(declaration), closure_(closure)
     {
     }
     std::any call(std::shared_ptr<Interpreter> interpreter, std::vector<std::any> arguments);
@@ -44,4 +47,5 @@ struct RuntimeFunction : public ICallable
 
   private:
     std::shared_ptr<Function> declaration_;
+    std::shared_ptr<Environment> closure_;
 };

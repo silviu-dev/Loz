@@ -29,7 +29,7 @@ void Interpreter::interpret(std::vector<std::shared_ptr<Stmt>> stmtVec)
 {
     // ICallablePtr clockPtr = std::make_shared<ClockNativeFunction>();
     // globals_->define("clock", clockPtr);
-
+    std::cout << "numar variabile rezolvate " << locals_.size();
     try
     {
         for (auto stmt : stmtVec)
@@ -112,6 +112,17 @@ std::any Interpreter::visit(std::shared_ptr<Assign> assign)
 {
     auto val = evaluate(assign->value);
     env_->assign(assign->name, val);
+
+    auto distancePtr = locals_.find(assign);
+    if (distancePtr != locals_.end())
+    {
+        env_->assignAt(distancePtr->second, assign->name, val);
+    }
+    else
+    {
+        globals_->assign(assign->name, val);
+    }
+
     return val;
 }
 
@@ -186,6 +197,7 @@ std::any Interpreter::visit(std::shared_ptr<Binary> binary)
         return isEqual(left, right);
         break;
     }
+    return nullptr;
 }
 std::any Interpreter::visit(std::shared_ptr<Grouping> grouping)
 {
@@ -244,7 +256,7 @@ std::any Interpreter::visit(std::shared_ptr<Return> ret)
 
 std::any Interpreter::visit(std::shared_ptr<Function> stmt) // function declaration
 {
-    ICallablePtr function = std::make_shared<RuntimeFunction>(stmt);
+    ICallablePtr function = std::make_shared<RuntimeFunction>(stmt, env_);
     env_->define(stmt->name.lexeme_, function);
     return nullptr;
 }
@@ -262,11 +274,25 @@ std::any Interpreter::visit(std::shared_ptr<Unary> unary)
         auto doubleObj = std::any_cast<double>(right);
         return doubleObj * (-1);
     }
+    return nullptr;
 }
 
 std::any Interpreter::visit(std::shared_ptr<Variable> variable)
 {
-    return env_->get(variable->name);
+    return lookUpVariable(variable->name, variable);
+}
+
+std::any Interpreter::lookUpVariable(const Token &name, std::shared_ptr<Expr> expr)
+{
+    auto distancePtr = locals_.find(expr);
+    if (distancePtr != locals_.end())
+    {
+        return env_->getAt(distancePtr->second, name.lexeme_);
+    }
+    else
+    {
+        return globals_->get(name);
+    }
 }
 
 std::any Interpreter::evaluate(std::shared_ptr<Expr> expr)
@@ -310,6 +336,7 @@ bool Interpreter::isEqual(std::any a, std::any b)
         return std::any_cast<std::string>(a) == std::any_cast<std::string>(b);
     if (a.type() == typeid(bool))
         return std::any_cast<bool>(a) == std::any_cast<bool>(b);
+    return false;
 }
 
 void Interpreter::printValue(std::any value)
@@ -326,4 +353,9 @@ void Interpreter::printValue(std::any value)
     {
         std::cout << std::any_cast<bool>(value) << "\n";
     }
+}
+
+void Interpreter::resolve(std::shared_ptr<Expr> expr, int depth)
+{
+    locals_.insert(std::make_pair(expr, depth));
 }

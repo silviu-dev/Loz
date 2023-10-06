@@ -13,26 +13,31 @@ void AstPrinter::print(std::shared_ptr<Stmt> stmt)
 std::any AstPrinter::visit(std::shared_ptr<Expression> expression)
 {
     expression->expression->accept(shared_from_this());
+    return nullptr;
 }
 
 std::any AstPrinter::visit(std::shared_ptr<Print> print)
 {
     cout << "print ";
     print->expression->accept(shared_from_this());
+    return nullptr;
 }
 
 std::any AstPrinter::visit(std::shared_ptr<Var> variable)
 {
     parenthesize(variable->name.lexeme_, {variable->initializer});
+    return nullptr;
 }
 
 std::any AstPrinter::visit(std::shared_ptr<Binary> binary)
 {
     parenthesize(binary->oper.lexeme_, {binary->left, binary->right});
+    return nullptr;
 }
 std::any AstPrinter::visit(std::shared_ptr<Grouping> grouping)
 {
     parenthesize("Grouping", {grouping->expression});
+    return nullptr;
 }
 std::any AstPrinter::visit(std::shared_ptr<Literal> literal)
 {
@@ -56,15 +61,18 @@ std::any AstPrinter::visit(std::shared_ptr<Literal> literal)
             cout << boolObj;
         }
     }
+    return nullptr;
 }
 std::any AstPrinter::visit(std::shared_ptr<Unary> unary)
 {
     parenthesize(unary->oper.lexeme_, {unary->right});
+    return nullptr;
 }
 
 std::any AstPrinter::visit(std::shared_ptr<Variable> variable)
 {
     cout << "(" << variable->name.lexeme_ << ")";
+    return nullptr;
 }
 
 void AstPrinter::parenthesize(std::string Name, std::vector<std::shared_ptr<Expr>> exprVec)

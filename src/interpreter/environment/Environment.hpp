@@ -15,7 +15,7 @@ struct RunError : public std::exception
     std::string message;
 };
 
-class Environment
+class Environment : public std::enable_shared_from_this<Environment>
 {
   public:
     Environment() : enclosing(nullptr)
@@ -27,6 +27,9 @@ class Environment
     virtual void define(std::string name, std::any value);
     virtual std::any get(const Token &name);
     virtual void assign(const Token &name, std::any value);
+    std::any getAt(int distance, std::string name);
+    std::shared_ptr<Environment> ancestor(int distance);
+    void assignAt(int distance, const Token &name, std::any value);
 
     std::shared_ptr<Environment> enclosing;
 

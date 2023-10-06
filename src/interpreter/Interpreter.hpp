@@ -49,16 +49,14 @@ class Interpreter : public ExprVisitor, public StmtVisitor, public std::enable_s
     std::any visit(std::shared_ptr<Return> ret) override;
     std::any visit(std::shared_ptr<Function> stmt) override;
     std::any visit(std::shared_ptr<Variable>) override;
+    std::any lookUpVariable(const Token &name, std::shared_ptr<Expr> expr);
     std::any evaluate(std::shared_ptr<Expr> expr);
     void executeBlock(std::vector<std::shared_ptr<Stmt>> block, std::shared_ptr<Environment> newEnv);
     bool isTruthy(std::any object);
-    std::any getResult()
-    {
-        return result_;
-    }
     void checkNumberOperand(Token oper, std::any operand);
     void checkNumberOperands(Token oper, std::any left, std::any right);
     bool isEqual(std::any a, std::any b);
+    void resolve(std::shared_ptr<Expr> expr, int depth);
 
     std::shared_ptr<Environment> globals_ = nullptr;
 
@@ -68,5 +66,6 @@ class Interpreter : public ExprVisitor, public StmtVisitor, public std::enable_s
     std::any result_ = nullptr;
     std::shared_ptr<IErrorHandler> errorHandler_ = nullptr;
     std::shared_ptr<Environment> env_ = nullptr;
+    std::map<std::shared_ptr<Expr>, int> locals_;
     friend class FunctionCaller;
 };

@@ -4,7 +4,7 @@ using namespace std;
 
 std::any RuntimeFunction::call(std::shared_ptr<Interpreter> interpreter, std::vector<std::any> arguments)
 {
-    auto caller = std::make_shared<FunctionCaller>(declaration_, interpreter);
+    auto caller = std::make_shared<FunctionCaller>(declaration_, interpreter, closure_);
     caller->call(arguments);
     return nullptr;
 }
