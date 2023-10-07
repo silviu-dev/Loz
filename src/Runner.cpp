@@ -86,7 +86,8 @@ void Runner::runFile(const std::string &path)
                 auto interpreter = std::make_shared<Interpreter>(errorHandler_);
                 auto resolver = std::make_shared<Resolver>(interpreter, errorHandler_);
                 resolver->resolve(statements);
-                interpreter->interpret(statements);
+                if (!(resolver->panicMode))
+                    interpreter->interpret(statements);
             }
             // auto printer = std::make_shared<AstPrinter>();
             // for (auto e : expr)

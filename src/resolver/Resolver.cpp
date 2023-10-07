@@ -88,6 +88,12 @@ std::any Resolver::visit(std::shared_ptr<Call> expr)
 
 std::any Resolver::visit(std::shared_ptr<Return> ret)
 {
+    if (!inFunction_)
+    {
+        errorHandler_->error(ret->keyword, "Can't return from top-level code");
+        panicMode = true;
+        return nullptr;
+    }
     if (ret->value != nullptr)
     {
         resolve(ret->value);
@@ -97,9 +103,11 @@ std::any Resolver::visit(std::shared_ptr<Return> ret)
 
 std::any Resolver::visit(std::shared_ptr<Function> stmt) // function declaration
 {
+    inFunction_ = true;
     declare(stmt->name);
     define(stmt->name);
     resolveFunction(stmt);
+    inFunction_ = false;
     return nullptr;
 }
 
@@ -159,6 +167,10 @@ void Resolver::declare(const Token &name)
     if (scopes.empty())
         return;
     auto &scope = *(scopes.end() - 1);
+    if (scope.find(name.lexeme_) != scope.end())
+    {
+        errorHandler_->error(name, "Already variable with this name in this scope.");
+    }
     scope.insert(std::pair<std::string, bool>(name.lexeme_, false));
 }
 

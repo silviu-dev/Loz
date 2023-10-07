@@ -36,7 +36,10 @@ class Resolver : public ExprVisitor, public StmtVisitor, public std::enable_shar
     void resolveLocal(std::shared_ptr<Expr> expr, const Token &name);
     void resolveFunction(std::shared_ptr<Function> function);
 
+    bool panicMode = false;
+
   private:
+    bool inFunction_ = false;
     std::shared_ptr<Interpreter> interpreter_;
     std::vector<std::map<std::string, bool>> scopes;
     std::shared_ptr<IErrorHandler> errorHandler_ = nullptr;
