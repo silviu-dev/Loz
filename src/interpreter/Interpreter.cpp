@@ -29,7 +29,6 @@ void Interpreter::interpret(std::vector<std::shared_ptr<Stmt>> stmtVec)
 {
     // ICallablePtr clockPtr = std::make_shared<ClockNativeFunction>();
     // globals_->define("clock", clockPtr);
-    std::cout << "numar variabile rezolvate " << locals_.size();
     try
     {
         for (auto stmt : stmtVec)

@@ -38,7 +38,7 @@ void Environment::assign(const Token &name, std::any value)
 
 std::any Environment::getAt(int distance, std::string name)
 {
-    return ancestor(distance)->values.find(name);
+    return ancestor(distance)->values[name];
 }
 
 std::shared_ptr<Environment> Environment::ancestor(int distance)
@@ -53,5 +53,5 @@ std::shared_ptr<Environment> Environment::ancestor(int distance)
 
 void Environment::assignAt(int distance, const Token &name, std::any value)
 {
-    ancestor(distance)->values.insert(std::make_pair(name.lexeme_, value));
+    ancestor(distance)->values[name.lexeme_] = value;
 }

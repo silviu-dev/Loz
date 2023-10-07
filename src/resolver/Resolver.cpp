@@ -111,13 +111,17 @@ std::any Resolver::visit(std::shared_ptr<Unary> unary)
 
 std::any Resolver::visit(std::shared_ptr<Variable> variable)
 {
-    std::cout << "visit variable\n";
-    if (!scopes.empty() && (scopes.end() - 1)->find(variable->name.lexeme_)->second == false)
+    if (!scopes.empty())
     {
-        std::cout << "eroare\n";
-        errorHandler_->error(variable->name, "Can't read local variable in its own initializer.");
+        const auto &elem = (scopes.end() - 1)->find(variable->name.lexeme_);
+        if (elem != (scopes.end() - 1)->end())
+        {
+            if (elem->second == false)
+            {
+                errorHandler_->error(variable->name, "Can't read local variable in its own initializer.");
+            }
+        }
     }
-    std::cout << "resoveLocal\n";
     resolveLocal(variable, variable->name);
     return nullptr;
 }
@@ -152,16 +156,10 @@ void Resolver::endScope()
 
 void Resolver::declare(const Token &name)
 {
-    std::cout << "declare " << name.lexeme_ << "\n";
     if (scopes.empty())
         return;
     auto &scope = *(scopes.end() - 1);
     scope.insert(std::pair<std::string, bool>(name.lexeme_, false));
-
-    std::cout << "scopes: ";
-    for (auto j : scope)
-        std::cout << j.first << " ";
-    std::cout << "\n";
 }
 
 void Resolver::define(const Token &name)
@@ -175,16 +173,10 @@ void Resolver::define(const Token &name)
 
 void Resolver::resolveLocal(std::shared_ptr<Expr> expr, const Token &name)
 {
-    std::cout << "scopes.size(): " << scopes.size() << "\n";
     for (int i = scopes.size() - 1; i >= 0; i--)
     {
-        std::cout << "scopes: ";
-        for (auto j : scopes[i])
-            std::cout << j.first << " ";
-        std::cout << "\n";
         if (scopes[i].find(name.lexeme_) != scopes[i].end())
         {
-            std::cout << "env: " << scopes.size() - 1 - i << "\n";
             interpreter_->resolve(expr, scopes.size() - 1 - i);
             return;
         }

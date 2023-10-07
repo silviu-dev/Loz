@@ -1,13 +1,12 @@
-var a =2;
-print a;
+var a=2;
+fun f()
 {
 var a=3;
-print a;
-
+	fun c()
 	{
-	a=4;
 	print a;
 	}
-print a;
+return c;
 }
-print a;
+
+f()();
