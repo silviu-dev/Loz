@@ -5,6 +5,8 @@
 
 #include "ICallable.hpp"
 #include "Interpreter.hpp"
+#include "RuntimeClass.hpp"
+#include "RuntimeClassInstance.hpp"
 #include "RuntimeFunction.hpp"
 using namespace std;
 class ClockNativeFunction : public ICallable
@@ -70,6 +72,22 @@ std::any Interpreter::visit(std::shared_ptr<Var> declaration)
     return nullptr;
 }
 
+std::any Interpreter::visit(std::shared_ptr<Class> stmt)
+{
+    env_->define(stmt->name.lexeme_, nullptr);
+    std::map<std::string, ICallablePtr> methods{};
+    for (auto method : stmt->methods)
+    {
+        ICallablePtr function = std::make_shared<RuntimeFunction>(std::static_pointer_cast<Function>(method), env_);
+        auto nume = (std::static_pointer_cast<Function>(method))->name.lexeme_;
+        methods.insert(std::make_pair(nume, function));
+    }
+    ICallablePtr klass = std::make_shared<RuntimeClass>(stmt->name.lexeme_, methods);
+
+    env_->assign(stmt->name, klass);
+    return nullptr;
+}
+
 std::any Interpreter::visit(std::shared_ptr<While> stmt)
 {
     while (isTruthy(evaluate(stmt->condition)))
@@ -110,8 +128,6 @@ std::any Interpreter::visit(std::shared_ptr<If> stmt)
 std::any Interpreter::visit(std::shared_ptr<Assign> assign)
 {
     auto val = evaluate(assign->value);
-    env_->assign(assign->name, val);
-
     auto distancePtr = locals_.find(assign);
     if (distancePtr != locals_.end())
     {
@@ -242,6 +258,27 @@ std::any Interpreter::visit(std::shared_ptr<Call> expr)
     return nullptr;
 }
 
+std::any Interpreter::visit(std::shared_ptr<Get> expr)
+{
+    auto instance = evaluate(expr->object);
+    if (instance.type() != typeid(RuntimeClassInstancePtr))
+        throw InterpreterError(expr->name, "Only instances have properties");
+    return std::any_cast<RuntimeClassInstancePtr>(instance)->get(expr->name);
+}
+
+std::any Interpreter::visit(std::shared_ptr<Set> expr)
+{
+    auto object = evaluate(expr->object);
+    if (object.type() != typeid(RuntimeClassInstancePtr))
+    {
+        throw InterpreterError(expr->name, "Only instances have fields.");
+    }
+
+    auto value = evaluate(expr->value);
+    (std::any_cast<RuntimeClassInstancePtr>(object))->set(expr->name, value);
+    return value;
+}
+
 std::any Interpreter::visit(std::shared_ptr<Return> ret)
 {
     std::any value = nullptr;
@@ -279,6 +316,11 @@ std::any Interpreter::visit(std::shared_ptr<Unary> unary)
 std::any Interpreter::visit(std::shared_ptr<Variable> variable)
 {
     return lookUpVariable(variable->name, variable);
+}
+
+std::any Interpreter::visit(std::shared_ptr<This> expr)
+{
+    return lookUpVariable(expr->keyword, expr);
 }
 
 std::any Interpreter::lookUpVariable(const Token &name, std::shared_ptr<Expr> expr)
@@ -344,13 +386,21 @@ void Interpreter::printValue(std::any value)
     {
         std::cout << std::any_cast<double>(value) << "\n";
     }
-    if (value.type() == typeid(std::string))
+    else if (value.type() == typeid(std::string))
     {
         std::cout << std::any_cast<std::string>(value) << "\n";
     }
-    if (value.type() == typeid(bool))
+    else if (value.type() == typeid(bool))
     {
         std::cout << std::any_cast<bool>(value) << "\n";
+    }
+    else if (value.type() == typeid(RuntimeClassPtr))
+    {
+        std::cout << std::any_cast<RuntimeClassPtr>(value)->toString() << "\n";
+    }
+    else if (value.type() == typeid(RuntimeClassInstancePtr))
+    {
+        std::cout << std::any_cast<RuntimeClassInstancePtr>(value)->toString() << "\n";
     }
 }
 

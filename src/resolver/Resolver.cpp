@@ -23,6 +23,36 @@ std::any Resolver::visit(std::shared_ptr<Var> declaration)
     return nullptr;
 }
 
+std::any Resolver::visit(std::shared_ptr<Get> expr)
+{
+    resolve(expr->object);
+    return nullptr;
+}
+
+std::any Resolver::visit(std::shared_ptr<Set> expr)
+{
+    resolve(expr->object);
+    resolve(expr->value);
+    return nullptr;
+}
+
+std::any Resolver::visit(std::shared_ptr<Class> cl)
+{
+    auto oldInClass = inClass_;
+    inClass_ = true;
+    declare(cl->name);
+    define(cl->name);
+    beginScope();
+    scopes[scopes.size() - 1].insert(std::pair<std::string, bool>("this", true));
+    for (auto method : cl->methods)
+    {
+        resolveFunction(std::static_pointer_cast<Function>(method));
+    }
+    endScope();
+    inClass_ = oldInClass;
+    return nullptr;
+}
+
 std::any Resolver::visit(std::shared_ptr<While> stmt)
 {
     resolve(stmt->condition);
@@ -103,11 +133,12 @@ std::any Resolver::visit(std::shared_ptr<Return> ret)
 
 std::any Resolver::visit(std::shared_ptr<Function> stmt) // function declaration
 {
+    auto oldInFunction = inFunction_;
     inFunction_ = true;
     declare(stmt->name);
     define(stmt->name);
     resolveFunction(stmt);
-    inFunction_ = false;
+    inFunction_ = oldInFunction;
     return nullptr;
 }
 
@@ -131,6 +162,18 @@ std::any Resolver::visit(std::shared_ptr<Variable> variable)
         }
     }
     resolveLocal(variable, variable->name);
+    return nullptr;
+}
+
+std::any Resolver::visit(std::shared_ptr<This> expr)
+{
+    if (!inClass_)
+    {
+        errorHandler_->error(expr->keyword, "Can't use /'this/' outside classes");
+        panicMode = true;
+        return nullptr;
+    }
+    resolveLocal(expr, expr->keyword);
     return nullptr;
 }
 

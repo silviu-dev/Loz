@@ -10,6 +10,7 @@ class Resolver : public ExprVisitor, public StmtVisitor, public std::enable_shar
     {
     }
 
+    std::any visit(std::shared_ptr<Class> cl) override;
     std::any visit(std::shared_ptr<Expression> expression) override;
     std::any visit(std::shared_ptr<Print> print) override;
     std::any visit(std::shared_ptr<Var>) override;
@@ -23,9 +24,12 @@ class Resolver : public ExprVisitor, public StmtVisitor, public std::enable_shar
     std::any visit(std::shared_ptr<Literal>) override;
     std::any visit(std::shared_ptr<Unary>) override;
     std::any visit(std::shared_ptr<Call> expr) override;
+    std::any visit(std::shared_ptr<Get> expr) override;
+    std::any visit(std::shared_ptr<Set> expr) override;
     std::any visit(std::shared_ptr<Return> ret) override;
     std::any visit(std::shared_ptr<Function> stmt) override;
     std::any visit(std::shared_ptr<Variable>) override;
+    std::any visit(std::shared_ptr<This> expr) override;
     void resolve(std::vector<std::shared_ptr<Stmt>> statements);
     void resolve(std::shared_ptr<Stmt> stmt);
     void resolve(std::shared_ptr<Expr> expr);
@@ -40,6 +44,7 @@ class Resolver : public ExprVisitor, public StmtVisitor, public std::enable_shar
 
   private:
     bool inFunction_ = false;
+    bool inClass_ = false;
     std::shared_ptr<Interpreter> interpreter_;
     std::vector<std::map<std::string, bool>> scopes;
     std::shared_ptr<IErrorHandler> errorHandler_ = nullptr;

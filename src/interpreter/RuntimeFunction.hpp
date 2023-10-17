@@ -2,6 +2,7 @@
 #include "Environment.hpp"
 #include "ICallable.hpp"
 #include "Interpreter.hpp"
+#include "RuntimeClassInstance.hpp"
 #include "Stmt.hpp"
 
 struct FunctionCaller
@@ -44,8 +45,11 @@ struct RuntimeFunction : public ICallable
     std::any call(std::shared_ptr<Interpreter> interpreter, std::vector<std::any> arguments);
     int arity();
     std::string toString();
+    ICallablePtr bind(RuntimeClassInstancePtr instance);
 
   private:
     std::shared_ptr<Function> declaration_;
     std::shared_ptr<Environment> closure_;
 };
+
+using RuntimeFunctionPtr = std::shared_ptr<RuntimeFunction>;

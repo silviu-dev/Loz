@@ -29,12 +29,17 @@ int main(int argc, char *argv[])
                "struct Literal;\n"
                "struct Unary;\n"
                "struct Variable;\n"
-               "struct Logical;\n";
+               "struct Logical;\n"
+               "struct Get;\n"
+               "struct Set;\n"
+               "struct This;\n";
     defineAst(outputDir, "Expr",
               {"Assign = Token name, Expr value", "Binary = Expr left, Token oper, Expr right",
               "Call = Expr callee, Token paren, std::vector<std::shared_ptr<Expr>> arguments",
               "Grouping = Expr expression", "Literal = std::any value", "Unary = Token oper, Expr right",
-              "Variable = Token name","Logical = Expr left, Token oper, Expr right"}, additionalExprIncludes);
+              "Variable = Token name","Logical = Expr left, Token oper, Expr right",
+              "Get = Expr object, Token name", "Set = Expr object, Token name, Expr value",
+              "This = Token keyword"}, additionalExprIncludes);
 
     string additionalStmtIncludes = "#pragma once\n"
                "#include <memory>\n"
@@ -48,12 +53,14 @@ int main(int argc, char *argv[])
                "struct Var;\n"
                "struct If;\n"
                "struct While;\n"
-               "struct Return;\n";
+               "struct Return;\n"
+               "struct Class;\n";
     defineAst(outputDir, "Stmt",
           {"Block = std::vector<std::shared_ptr<Stmt>> statements", "Expression = Expr expression", "Print = Expr expression",
            "Var = Token name, Expr initializer", "If = Expr condition, Stmt thenBranch, Stmt elseBranch",
            "While = Expr condition, Stmt body", "Function = Token name, std::vector<Token> params, std::vector<std::shared_ptr<Stmt>> body",
-           "Return = Token keyword, Expr value"},
+           "Return = Token keyword, Expr value",
+           "Class = Token name, std::vector<std::shared_ptr<Stmt>> methods"},
           additionalStmtIncludes);
 }
 

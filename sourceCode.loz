@@ -1,3 +1,9 @@
-fun f(){
-return 2;
+class Bacon {
+eat() {
+print this.ana;
 }
+}
+var variable = Bacon();
+variable.ana=9999;
+print this;
+variable.eat();

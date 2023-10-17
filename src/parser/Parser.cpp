@@ -19,6 +19,8 @@ std::shared_ptr<Stmt> Parser::declaration()
 {
     try
     {
+        if (match({CLASS}))
+            return classDeclaration();
         if (match({VAR}))
             return varDeclaration();
         if (match({FUN}))
@@ -30,6 +32,19 @@ std::shared_ptr<Stmt> Parser::declaration()
         synchronize();
         return nullptr;
     }
+}
+
+std::shared_ptr<Stmt> Parser::classDeclaration()
+{
+    auto name = consume(IDENTIFIER, "Expect class name.");
+    consume(LEFT_BRACE, "Expect '{' before class body.");
+    std::vector<std::shared_ptr<Stmt>> methods{};
+    while (!check(RIGHT_BRACE) && !isAtEnd())
+    {
+        methods.push_back(function("method"));
+    }
+    consume(RIGHT_BRACE, "Expect '}' after class body.");
+    return std::make_shared<Class>(name, methods);
 }
 
 std::shared_ptr<Stmt> Parser::function(std::string kind)
@@ -206,10 +221,15 @@ std::shared_ptr<Expr> Parser::assignment()
         auto equals = previous();
         auto value = assignment();
         auto exprConverted = std::dynamic_pointer_cast<Variable>(expr);
+        auto exprConverted2 = std::dynamic_pointer_cast<Get>(expr);
         if (exprConverted != nullptr)
         {
             Token name = exprConverted->name;
             return std::make_shared<Assign>(name, value);
+        }
+        else if (exprConverted2 != nullptr)
+        {
+            return std::make_shared<Set>(exprConverted2->object, exprConverted2->name, value);
         }
         throw error(equals, "Invalid assignment target.");
     }
@@ -308,6 +328,11 @@ std::shared_ptr<Expr> Parser::call()
         {
             expr = finishCall(expr);
         }
+        else if (match({DOT}))
+        {
+            auto name = consume(IDENTIFIER, "Expect property name after '.'.");
+            expr = std::make_shared<Get>(expr, name);
+        }
         else
         {
             break;
@@ -346,6 +371,8 @@ std::shared_ptr<Expr> Parser::primary()
     {
         return std::make_shared<Variable>(previous());
     }
+    if (match({THIS}))
+        return std::make_shared<This>(previous());
     if (match({NUMBER}))
     {
         return std::make_shared<Literal>(previous().literal_);

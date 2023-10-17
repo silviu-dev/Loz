@@ -1,4 +1,5 @@
 #include "RuntimeFunction.hpp"
+#include "Environment.hpp"
 #include <iostream>
 using namespace std;
 
@@ -17,4 +18,12 @@ int RuntimeFunction::arity()
 std::string RuntimeFunction::toString()
 {
     return "<fn " + declaration_->name.lexeme_ + ">";
+}
+
+ICallablePtr RuntimeFunction::bind(RuntimeClassInstancePtr instance)
+{
+    auto environment = std::make_shared<Environment>(closure_);
+    environment->define("this", instance);
+    ICallablePtr var = std::make_shared<RuntimeFunction>(declaration_, environment);
+    return var;
 }
