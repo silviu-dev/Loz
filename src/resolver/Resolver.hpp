@@ -47,6 +47,7 @@ class Resolver : public ExprVisitor, public StmtVisitor, public std::enable_shar
     bool inFunction_ = false;
     bool inClass_ = false;
     bool inCtor_ = false;
+    bool hasSuperclass_ = false;
     std::shared_ptr<Interpreter> interpreter_;
     std::vector<std::map<std::string, bool>> scopes;
     std::shared_ptr<IErrorHandler> errorHandler_ = nullptr;

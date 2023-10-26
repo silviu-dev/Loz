@@ -49,8 +49,10 @@ std::any Resolver::visit(std::shared_ptr<Class> cl)
         errorHandler_->error(std::static_pointer_cast<Variable>(cl->superclass)->name,
                              "A class can't inherit from itself.");
     }
+    bool oldHasSuperclass = hasSuperclass_;
     if (cl->superclass != nullptr)
     {
+        hasSuperclass_ = true;
         resolve(cl->superclass);
     }
     if (cl->superclass != nullptr)
@@ -76,11 +78,18 @@ std::any Resolver::visit(std::shared_ptr<Class> cl)
     if (cl->superclass != nullptr)
         endScope();
     inClass_ = oldInClass;
+    hasSuperclass_ = oldHasSuperclass;
     return nullptr;
 }
 
 std::any Resolver::visit(std::shared_ptr<Super> super)
 {
+    if (!hasSuperclass_)
+    {
+        errorHandler_->error(super->keyword, "Can't use 'super' in a class with no superclass");
+        panicMode = true;
+        return nullptr;
+    }
     resolveLocal(super, super->keyword);
     return nullptr;
 }
