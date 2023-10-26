@@ -37,6 +37,12 @@ std::shared_ptr<Stmt> Parser::declaration()
 std::shared_ptr<Stmt> Parser::classDeclaration()
 {
     auto name = consume(IDENTIFIER, "Expect class name.");
+    std::shared_ptr<Expr> superclass = nullptr;
+    if (match({LESS}))
+    {
+        consume(IDENTIFIER, "Expect superclass name.");
+        superclass = std::make_shared<Variable>(previous());
+    }
     consume(LEFT_BRACE, "Expect '{' before class body.");
     std::vector<std::shared_ptr<Stmt>> methods{};
     while (!check(RIGHT_BRACE) && !isAtEnd())
@@ -44,7 +50,7 @@ std::shared_ptr<Stmt> Parser::classDeclaration()
         methods.push_back(function("method"));
     }
     consume(RIGHT_BRACE, "Expect '}' after class body.");
-    return std::make_shared<Class>(name, methods);
+    return std::make_shared<Class>(name, superclass, methods);
 }
 
 std::shared_ptr<Stmt> Parser::function(std::string kind)
@@ -367,6 +373,13 @@ std::shared_ptr<Expr> Parser::primary()
         return std::make_shared<Literal>(true);
     if (match({NIL}))
         return std::make_shared<Literal>(nullptr);
+    if (match({SUPER}))
+    {
+        auto keyword = previous();
+        consume(DOT, "Expect '.' after 'super'.");
+        auto method = consume(IDENTIFIER, "Expect superclass method name.");
+        return std::make_shared<Super>(keyword, method);
+    }
     if (match({IDENTIFIER}))
     {
         return std::make_shared<Variable>(previous());

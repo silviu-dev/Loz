@@ -74,18 +74,62 @@ std::any Interpreter::visit(std::shared_ptr<Var> declaration)
 
 std::any Interpreter::visit(std::shared_ptr<Class> stmt)
 {
+    std::any superclass = nullptr;
+    if (stmt->superclass != nullptr)
+    {
+        superclass = evaluate(stmt->superclass);
+        if (superclass.type() != typeid(ICallablePtr))
+        {
+            std::cout << "silviu 1 \n";
+            if (std::dynamic_pointer_cast<RuntimeClassPtr>(std::any_cast<ICallablePtr>(superclass)) == nullptr)
+            {
+                std::cout << "silviu 2\n";
+                throw InterpreterError(std::static_pointer_cast<Variable>(stmt->superclass)->name,
+                                       "Superclass must be a class.");
+            }
+        }
+    }
     env_->define(stmt->name.lexeme_, nullptr);
+
+    if (stmt->superclass != nullptr)
+    {
+        env_ = std::make_shared<Environment>(env_);
+        env_->define("super", superclass);
+    }
     std::map<std::string, ICallablePtr> methods{};
     for (auto method : stmt->methods)
     {
-        ICallablePtr function = std::make_shared<RuntimeFunction>(std::static_pointer_cast<Function>(method), env_);
         auto nume = (std::static_pointer_cast<Function>(method))->name.lexeme_;
+        ICallablePtr function =
+            std::make_shared<RuntimeFunction>(std::static_pointer_cast<Function>(method), env_, nume == "init");
         methods.insert(std::make_pair(nume, function));
     }
-    ICallablePtr klass = std::make_shared<RuntimeClass>(stmt->name.lexeme_, methods);
+    ICallablePtr klass = std::make_shared<RuntimeClass>(
+        stmt->name.lexeme_,
+        stmt->superclass != nullptr ? std::dynamic_pointer_cast<RuntimeClass>(std::any_cast<ICallablePtr>(superclass))
+                                    : nullptr,
+        methods);
 
+    if (stmt->superclass != nullptr)
+    {
+        env_ = env_->enclosing;
+    }
     env_->assign(stmt->name, klass);
     return nullptr;
+}
+
+std::any Interpreter::visit(std::shared_ptr<Super> super)
+{
+    int distance = locals_.find(super)->second;
+    auto superclass =
+        std::dynamic_pointer_cast<RuntimeClass>(std::any_cast<ICallablePtr>(env_->getAt(distance, "super")));
+    auto object = std::any_cast<RuntimeClassInstancePtr>(env_->getAt(distance - 1, "this"));
+    auto method = std::dynamic_pointer_cast<RuntimeFunction>(superclass->findMethod(super->method.lexeme_));
+    if (method == nullptr)
+    {
+        throw InterpreterError(super->method, "Undefined property '" + super->method.lexeme_ + "'.");
+    }
+    return method->bind(object);
 }
 
 std::any Interpreter::visit(std::shared_ptr<While> stmt)
@@ -255,6 +299,7 @@ std::any Interpreter::visit(std::shared_ptr<Call> expr)
     {
         return returner.result;
     }
+
     return nullptr;
 }
 

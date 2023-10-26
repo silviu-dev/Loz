@@ -38,18 +38,20 @@ struct FunctionCaller
 
 struct RuntimeFunction : public ICallable
 {
-    RuntimeFunction(const std::shared_ptr<Function> &declaration, std::shared_ptr<Environment> &closure)
-        : declaration_(declaration), closure_(closure)
+    RuntimeFunction(const std::shared_ptr<Function> &declaration, std::shared_ptr<Environment> &closure,
+                    bool isCtor = false)
+        : declaration_(declaration), closure_(closure), isCtor_(isCtor)
     {
     }
     std::any call(std::shared_ptr<Interpreter> interpreter, std::vector<std::any> arguments);
     int arity();
     std::string toString();
     ICallablePtr bind(RuntimeClassInstancePtr instance);
+    std::shared_ptr<Environment> closure_;
 
   private:
     std::shared_ptr<Function> declaration_;
-    std::shared_ptr<Environment> closure_;
+    bool isCtor_;
 };
 
 using RuntimeFunctionPtr = std::shared_ptr<RuntimeFunction>;

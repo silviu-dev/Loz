@@ -53,6 +53,7 @@ class Interpreter : public ExprVisitor, public StmtVisitor, public std::enable_s
     std::any visit(std::shared_ptr<Function> stmt) override;
     std::any visit(std::shared_ptr<Variable>) override;
     std::any visit(std::shared_ptr<This> expr) override;
+    std::any visit(std::shared_ptr<Super> super) override;
     std::any lookUpVariable(const Token &name, std::shared_ptr<Expr> expr);
     std::any evaluate(std::shared_ptr<Expr> expr);
     void executeBlock(std::vector<std::shared_ptr<Stmt>> block, std::shared_ptr<Environment> newEnv);

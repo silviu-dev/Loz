@@ -7,6 +7,10 @@ std::any RuntimeFunction::call(std::shared_ptr<Interpreter> interpreter, std::ve
 {
     auto caller = std::make_shared<FunctionCaller>(declaration_, interpreter, closure_);
     caller->call(arguments);
+    if (isCtor_)
+    {
+        return closure_->getAt(0, "this");
+    }
     return nullptr;
 }
 
@@ -24,6 +28,6 @@ ICallablePtr RuntimeFunction::bind(RuntimeClassInstancePtr instance)
 {
     auto environment = std::make_shared<Environment>(closure_);
     environment->define("this", instance);
-    ICallablePtr var = std::make_shared<RuntimeFunction>(declaration_, environment);
+    ICallablePtr var = std::make_shared<RuntimeFunction>(declaration_, environment, isCtor_);
     return var;
 }

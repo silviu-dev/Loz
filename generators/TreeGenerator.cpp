@@ -32,14 +32,15 @@ int main(int argc, char *argv[])
                "struct Logical;\n"
                "struct Get;\n"
                "struct Set;\n"
-               "struct This;\n";
+               "struct This;\n"
+               "struct Super;\n";
     defineAst(outputDir, "Expr",
               {"Assign = Token name, Expr value", "Binary = Expr left, Token oper, Expr right",
               "Call = Expr callee, Token paren, std::vector<std::shared_ptr<Expr>> arguments",
               "Grouping = Expr expression", "Literal = std::any value", "Unary = Token oper, Expr right",
               "Variable = Token name","Logical = Expr left, Token oper, Expr right",
               "Get = Expr object, Token name", "Set = Expr object, Token name, Expr value",
-              "This = Token keyword"}, additionalExprIncludes);
+              "This = Token keyword", "Super = Token keyword, Token method"}, additionalExprIncludes);
 
     string additionalStmtIncludes = "#pragma once\n"
                "#include <memory>\n"
@@ -60,7 +61,7 @@ int main(int argc, char *argv[])
            "Var = Token name, Expr initializer", "If = Expr condition, Stmt thenBranch, Stmt elseBranch",
            "While = Expr condition, Stmt body", "Function = Token name, std::vector<Token> params, std::vector<std::shared_ptr<Stmt>> body",
            "Return = Token keyword, Expr value",
-           "Class = Token name, std::vector<std::shared_ptr<Stmt>> methods"},
+           "Class = Token name, Expr superclass, std::vector<std::shared_ptr<Stmt>> methods"},
           additionalStmtIncludes);
 }
 

@@ -5,7 +5,9 @@
 
 struct RuntimeClass : public ICallable, public std::enable_shared_from_this<RuntimeClass>
 {
-    RuntimeClass(const std::string &name, std::map<std::string, ICallablePtr> &methods) : name_(name), methods_(methods)
+    RuntimeClass(const std::string &name, std::shared_ptr<RuntimeClass> superclass,
+                 std::map<std::string, ICallablePtr> &methods)
+        : name_(name), superclass_(superclass), methods_(methods)
     {
     }
 
@@ -16,6 +18,7 @@ struct RuntimeClass : public ICallable, public std::enable_shared_from_this<Runt
 
   private:
     const std::string name_;
+    std::shared_ptr<RuntimeClass> superclass_;
     std::map<std::string, ICallablePtr> methods_;
     friend class RuntimeClassInstance;
 };

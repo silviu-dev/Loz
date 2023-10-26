@@ -1,9 +1,17 @@
-class Bacon {
-eat() {
-print this.ana;
+class Doughnut 
+{
+	cook() 
+	{
+		print "Fry until golden brown.";
+	}
 }
+
+class BostonCream < Doughnut 
+{
+	cook() 
+	{
+		super.cook();
+		print "Pipe full of custard and coat with chocolate.";
+	}
 }
-var variable = Bacon();
-variable.ana=9999;
-print this;
-variable.eat();
+BostonCream().cook();

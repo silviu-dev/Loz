@@ -42,14 +42,46 @@ std::any Resolver::visit(std::shared_ptr<Class> cl)
     inClass_ = true;
     declare(cl->name);
     define(cl->name);
+
+    if ((cl->superclass != nullptr) &&
+        (cl->name.lexeme_ == std::static_pointer_cast<Variable>(cl->superclass)->name.lexeme_))
+    {
+        errorHandler_->error(std::static_pointer_cast<Variable>(cl->superclass)->name,
+                             "A class can't inherit from itself.");
+    }
+    if (cl->superclass != nullptr)
+    {
+        resolve(cl->superclass);
+    }
+    if (cl->superclass != nullptr)
+    {
+        beginScope();
+        scopes[scopes.size() - 1].insert(std::pair<std::string, bool>("super", true));
+    }
     beginScope();
     scopes[scopes.size() - 1].insert(std::pair<std::string, bool>("this", true));
+
+    auto oldInFunction = inFunction_;
+    inFunction_ = true;
+    auto oldInCtor = inCtor_;
     for (auto method : cl->methods)
     {
+        if (std::static_pointer_cast<Function>(method)->name.lexeme_ == "init")
+            inCtor_ = true;
         resolveFunction(std::static_pointer_cast<Function>(method));
+        inCtor_ = oldInCtor;
     }
+    inFunction_ = oldInFunction;
     endScope();
+    if (cl->superclass != nullptr)
+        endScope();
     inClass_ = oldInClass;
+    return nullptr;
+}
+
+std::any Resolver::visit(std::shared_ptr<Super> super)
+{
+    resolveLocal(super, super->keyword);
     return nullptr;
 }
 
@@ -109,6 +141,7 @@ std::any Resolver::visit(std::shared_ptr<Literal> literal)
 
 std::any Resolver::visit(std::shared_ptr<Call> expr)
 {
+    resolve(expr->callee);
     for (auto argument : expr->arguments)
     {
         resolve(argument);
@@ -121,6 +154,12 @@ std::any Resolver::visit(std::shared_ptr<Return> ret)
     if (!inFunction_)
     {
         errorHandler_->error(ret->keyword, "Can't return from top-level code");
+        panicMode = true;
+        return nullptr;
+    }
+    if (inCtor_)
+    {
+        errorHandler_->error(ret->keyword, "Can't return anything from constructor");
         panicMode = true;
         return nullptr;
     }
