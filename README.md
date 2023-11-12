@@ -57,7 +57,7 @@ Build UTs target, run the tests and memory checker
 
 ## License
 
-This project is licensed under the MIT License, see LICENSE for more information.
+This project is licensed under the MIT License, see [LICENSE](LICENSE)
 
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
