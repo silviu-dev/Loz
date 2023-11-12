@@ -1,9 +1,9 @@
 # Loz
 
-C++ 17 implementation of the Bob Nystrom's programming language Lox described in his book, [Crafting Interpreters](https://www.craftinginterpreters.com/)
+Loz is a C++ 17 implementation of the Bob Nystrom's programming language Lox described in his book, [Crafting Interpreters](https://www.craftinginterpreters.com/)
 
 
-## Build the soruce code and run  
+## Build the soruce code and run the interpreter 
 
 Build dependencies:
 - cmake version 3.20.0 or upper
@@ -35,10 +35,16 @@ Build the project
   ./build.sh
 ```
 
-Run the interpreter
+Run the interpreter in promt mode
 
 ```bash
-  ./build/program
+  ./build/bin/bootstrap
+```
+
+Run the interpreter in file mode
+
+```bash
+  ./build/bin/bootstrap 'path to source file'
 ```
 ## Running Tests
 
