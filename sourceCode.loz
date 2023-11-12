@@ -1,14 +1,5 @@
-class ClasaB
-{
-	cook()
-	{
-	print "cook din clasaB";
-	}
+fun fib(n) {
+if (n < 2) return n;
+return fib(n - 1) + fib(n - 2);
 }
-class Eclair <ClasaB{
-cook() {
-super.cook();
-print "Pipe full of crème pâtissière.";
-}
-}
-Eclair().cook();
+print fib(10);
